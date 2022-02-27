@@ -1,0 +1,133 @@
+
+.form__container {
+    margin-top: 1rem;
+    background-color: var(--primary-color);
+    border-radius: 2rem;
+    padding: 1rem;
+}
+
+.title__container {
+    width: 100%;
+    height: 4.5rem;
+    padding: 0.6rem 0rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid #42434e
+}
+
+/*
+CSS FOR HEADER CART
+*/
+.bg-c-1 {
+    background: linear-gradient(to right, #f94144, #f94144);
+}
+
+.bg-c-2 {
+    background: linear-gradient(45deg,#f3722c,#f3722c);
+}
+
+.bg-c-3 {
+    background: linear-gradient(45deg,#f8961e,#f8961e);
+}
+
+.bg-c-4 {
+     background: linear-gradient(45deg,#90be6d,#90be6d);
+}
+
+.bg-c-5 {
+     background: linear-gradient(45deg,#00b4d8,#ade8f4);
+}
+
+.header-card {
+    border-radius: 5px;
+    -webkit-box-shadow: 0 1px 2.94px 0.06px rgba(4,26,55,0.16);
+    box-shadow: 0 1px 2.94px 0.06px rgba(4,26,55,0.16);
+    border: none;
+    margin: 10px 3px 3px 3px;
+    -webkit-transition: all 0.3s ease-in-out;
+    transition: all 0.3s ease-in-out;
+}
+
+.header-card .header-card-block {
+    padding: 20px;
+}
+
+.f-left {
+    float: left;
+}
+
+.f-right {
+    float: right;
+}
+
+.main {
+    margin: 10px 10px 10px 10px;
+}
+
+/*
+CSS FOR TABLE
+*/
+.custom-table thead tr, .custom-table thead th {
+    border-top: none;
+    border-bottom: none !important;
+    color: #03045e;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: .2rem;
+}
+
+.custom-table tbody th, .custom-table tbody td {
+    color: #005f73;
+    font-weight: 400;
+    font-weight: 300;
+    -webkit-transition: .3s all ease;
+    font-size: 15px;
+    -o-transition: .3s all ease;
+    transition: .3s all ease; }
+
+.custom-table tbody th small, .custom-table tbody td small {
+      color: rgba(255, 255, 255, 0.3);
+      font-weight: 300;
+}
+
+.custom-table tbody tr:hover td, .custom-table tbody tr:focus td
+{   color: #03045e; }
+
+.custom-table tbody tr:hover td a, .custom-table tbody tr:focus td a {
+    color: #fdd114;
+}
+
+.custom-table tbody tr:hover td .more, .custom-table tbody tr:focus td .more {
+    color: #fdd114;
+}
+
+.table td, .table th {
+    padding:0.3rem;
+}
+
+/*
+CSS FOR CHART JS
+*/
+.canvas .chart {
+  background-color: red;
+}
+
+.chart_top {
+    padding: 30px 10px 30px 10px
+}
+
+.title {
+    border-top: none;
+    border-bottom: none !important;
+    color: #005f73;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: .2rem;
+}
+
+.form-group {
+    font-size:12px;
+}
+
+.input__container {
+    font-size:15px;
+}

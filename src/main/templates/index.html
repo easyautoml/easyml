@@ -1,0 +1,66 @@
+{% extends "base_generic.html" %}
+{% load static %}
+
+{% block content %}
+<div class="row">
+{% for experiment_obj in experiment_objs %}
+
+        <div class="col-md-2">
+            <div class="card bg-c-blue order-card">
+                <div class="card-block">
+                    <h6 class="header-card-block">{{ experiment_obj.problem_type | upper }}
+
+                        <ion-icon name="close-outline" class="f-right" onclick="delete_confirm('{{ experiment_obj.experiment_id }}')"
+                                  data-toggle="modal" data-target="#delete_confirm"></ion-icon>
+
+                    </h6>
+                    <h4 class="text-right">
+                        <img class="f-left" src="{% static 'img/exp.png' %}" height="40px"/>
+                        <a role="button" href="{% url 'experiment_detail' experiment_obj.experiment_id %}">{{ experiment_obj.experiment_name | slice:":30" }}</a></h4>
+                    <p class="m-b-0"><ion-icon name="calendar-outline"></ion-icon> {{ experiment_obj.create_datetime }}</p>
+                </div>
+            </div>
+        </div>
+
+{% endfor %}
+</div>
+
+<footer class="text-end text-white fixed-bottom">
+
+  <div class="p-3" stype="padding-left:40px">
+
+      <a class="btn btn-secondary active" role="button"
+         href="{% url 'experiment_create' %}">
+          <ion-icon name="terminal-outline" ></ion-icon> Create Experiment</a>
+
+      <a class="btn btn-secondary active" role="button"
+         href="{% url 'file' %}">
+          <ion-icon name="calendar-outline"></ion-icon> File Management</a>
+  </div>
+
+</footer>
+
+<link rel="stylesheet" href="{% static 'css/index.css' %}"/>
+
+<!-- Modal -->
+<div class="modal fade" id="delete_confirm" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <form method="POST" action="" id="delete_form"> {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-body">
+                Are you sure delete this experiment ?
+                    <ul hidden>
+                        <li><input type="text" id="delete_experiment_id" name="delete_experiment_id"></li>
+                    </ul>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" type="submit" name="delete" value="delete_value">Delete</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="{% static 'javascript/index.js' %}" ></script>
+{% endblock %}

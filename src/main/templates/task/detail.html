@@ -1,0 +1,74 @@
+{% extends "base_generic.html" %}
+{% load static %}
+
+{% block content %}
+
+<div class="container">
+    <div class="row py-2">
+        <div class="col mx-auto shadow border-0">
+
+            <div class="card-body bg-white rounded">
+                <div class="card-body">
+                    <h1>Task Info</h1>
+                </div>
+
+                <div class="card-body table-responsive">
+
+                    <form>
+                        <div class="form-group row">
+                            <label class="col-sm-2 col-form-label">Task ID</label>
+                            <div class="col-sm-10">
+                                <input type="text" readonly class="form-control-plaintext" value="{{ task_obj.task_id }}">
+                            </div>
+
+                            <label class="col-sm-2 col-form-label">Create Date</label>
+                            <div class="col-sm-10">
+                                <input type="text" readonly class="form-control-plaintext" value="{{ task_obj.create_datetime }}">
+                            </div>
+
+                            <label class="col-sm-2 col-form-label">Finish Date</label>
+                            <div class="col-sm-10">
+                                <input type="text" readonly class="form-control-plaintext" value="{{ task_obj.finish_datetime }}">
+                            </div>
+
+                            <label class="col-sm-2 col-form-label">Status</label>
+                            <div class="col-sm-10">
+                                {% ifequal  task_obj.status  0 %}
+                                    <button type="button" class="btn btn-outline-primary">Pending</button>
+                                {%　endifequal %}
+
+                                {% ifequal  task_obj.status  1 %}
+                                    <button type="button" class="btn btn-outline-secondary">RUNNING</button>
+                                {%　endifequal %}
+
+                                {% ifequal  task_obj.status  2 %}
+                                    <button type="button" class="btn btn-outline-success">Success</button>
+                                {%　endifequal %}
+
+                                {% ifequal  task_obj.status  3 %}
+                                    <button type="button" class="btn btn-outline-danger">FAIL</button>
+                                {%　endifequal %}
+                            </div>
+
+                            <label class="col-sm-2 col-form-label">Description</label>
+                            <div class="col-sm-10">
+                                <input type="text" readonly class="form-control-plaintext" value="{{ task_obj.description }}">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row py-2">
+        <div class="col mx-auto shadow border-0">
+            <iframe src="http://localhost:5555/task/{{ task_obj.task_id }}" width="100%" height="800" style="border:none; padding-top:10px" allowfullscreen></iframe>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

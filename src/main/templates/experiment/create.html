@@ -1,0 +1,222 @@
+{% extends "base_generic_non_header.html" %}
+{% load static %}
+
+{% block content %}
+
+<form action="" method="post" id="main_form">{% csrf_token %}
+    <div class="form__container">
+        <div class="title__container">
+
+            <a href="{% url 'index' %}"> <img src="{% static 'img/btn_back.png' %}" height="25px" style="float:left; padding-right:10px; padding-top:10px"/></a>
+
+            <h1>Create Experiment</h1>
+
+            <p>Follow the 4 simple steps to complete your experiment</p>
+        </div>
+
+        <div class="body__container">
+            <div class="left__container">
+                <div class="side__titles">
+                    <div class="title__name">
+                        <h3>Data</h3>
+                        <p>Select Training Data</p>
+                    </div>
+                    <div class="title__name">
+                        <h3>Target</h3>
+                        <p>Target and Score</p>
+                    </div>
+                    <div class="title__name">
+                        <h3>Features</h3>
+                        <p>Select training features</p>
+                    </div>
+                    <div class="title__name">
+                        <h3>Preset</h3>
+                        <p>Quality of experiment</p>
+                    </div>
+                    <div class="title__name">
+                        <h3>Complete</h3>
+                        <p>Finally press submit</p>
+                    </div>
+                </div>
+                <div class="progress__bar__container">
+                    <ul>
+                        <li class="active" id="icon1">
+                            <ion-icon name="document-outline"></ion-icon>
+                        </li>
+                        <li id="icon2">
+                            <ion-icon name="disc-outline"></ion-icon>
+                        </li>
+                        <li id="icon3">
+                            <ion-icon name="barcode-outline"></ion-icon>
+                        </li>
+                        <li id="icon4">
+                            <ion-icon name="options-outline"></ion-icon>
+                        </li>
+                        <li id="icon5">
+                            <ion-icon name="play-outline"></ion-icon>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="right__container">
+                <fieldset id="form1">
+                    <div class="sub__title__container ">
+                        <p>Step 1/5</p>
+                        <h2>Select Data Source</h2>
+                        <p>Choose data used to train model</p>
+                    </div>
+                    <div class="input__container">
+                        {% for file_obj in file_objs %}
+                                <div class="selection newB" onclick="select_file('{{ file_obj.file_id }}')">
+                                    <div class="imoji">
+                                        <ion-icon name="document-outline"></ion-icon>
+                                    </div>
+                                    <div class="descriptionTitle">
+                                        <h3>{{ file_obj.file_name }}</h3>
+                                        <p>{{ file_obj.create_datetime }}</p>
+                                    </div>
+                                </div>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <fieldset class="active__form" id="form2">
+                    <div class="sub__title__container">
+                        <p>Step 2/5</p>
+                        <h2>Target, Problem Type and Score</h2>
+                        <p>Choose the target used to build model, problem type and score used to evaluation models</p>
+                    </div>
+                    <div class="input__container">
+                        <p>Target</p>
+                        <div class="dropdown" required>
+                          <button class="btn dropdown-toggle" type="button"
+                                  id="btn_target" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                              Select the target!
+                          </button>
+                          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                              {% for f_metadata_obj in f_metadata_objs %}
+                                    <a class="dropdown-item" href="#" onclick="select_target('{{f_metadata_obj.column_name}}', '{{f_metadata_obj.file_metadata_id}}');">{{ f_metadata_obj.column_name }}<p>{{ f_metadata_obj.data_type }}</p></a>
+                              {% endfor %}
+                          </div>
+                        </div>
+                    </div>
+
+                    <div class="input__container">
+                        <p>Problem Type</p>
+                        <div class="dropdown" required>
+                          <button class="btn dropdown-toggle" type="button"
+                                  id="btn_problem_type" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Select problem type!
+                          </button>
+                          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                              <a class="dropdown-item" href="#" onclick="select_problem('regression')">Regression</a>
+                              <a class="dropdown-item" href="#" onclick="select_problem('binary')">Binary</a>
+                              <a class="dropdown-item" href="#" onclick="select_problem('multiclass')">Multiclass</a>
+                          </div>
+                        </div>
+
+                    </div>
+
+                    <div class="input__container">
+                        <p>Evaluation Score</p>
+                        <div class="dropdown" required>
+                          <button class="btn dropdown-toggle" type="button"
+                                  id="btn_score" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Select Score!
+                          </button>
+                          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                              <div id="drp_score_binary">
+                                  <a class="dropdown-item" href="#" onclick="select_score('accuracy')">accuracy</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('f1')">f1</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('precision')">precision</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('roc_auc')">roc_auc</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('log_loss')">log_loss</a>
+                              </div>
+                              <div id="drp_score_regression">
+                                  <a class="dropdown-item" href="#" onclick="select_score('root_mean_squared_error')">root_mean_squared_error</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('mean_squared_error')">mean_squared_error</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('mean_absolute_error')">mean_absolute_error</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('median_absolute_error')">median_absolute_error</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('r2')">r2</a>
+                              </div>
+                          </div>
+                        </div>
+
+                    </div>
+
+                    <div class="buttons"> <a class="prev__btn" onclick="prevForm();">Back</a> <a class="nxt__btn" onclick="nextForm(); submit();">Next</a> </div>
+                </fieldset>
+
+
+                <fieldset class="active__form" id="form3">
+                    <div class="sub__title__container">
+                        <p>Step 3/5</p>
+                        <h2>Select features</h2>
+                        <p>Choose multiple features used to build models. Feature which are selected as target can is nonselectable.</p>
+                    </div>
+                    <div class="input__container">
+                        {% for f_metadata_obj in f_metadata_objs %}
+                            <div class="custom-control custom-checkbox">
+                              {% if f_metadata_obj.file_metadata_id == form.target_id %}
+                                    <input class="custom-control-input" type="checkbox" disabled>
+                                    <label class="custom-control-label" for="{{ f_metadata_obj.column_name }}">{{ f_metadata_obj.column_name }}<p>{{ f_metadata_obj.data_type }} (Selected as target)</p></label>
+                                {% else %}
+                                    <input name="chk_feature" class="custom-control-input" type="checkbox" id="{{ f_metadata_obj.column_name }}" value="{{ f_metadata_obj.file_metadata_id }}" checked>
+                                    <label class="custom-control-label" for="{{ f_metadata_obj.column_name }}">{{ f_metadata_obj.column_name }}<p>{{ f_metadata_obj.data_type }}</p></label>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        <div class="buttons"> <a class="prev__btn" onclick="prevForm();">Back</a> <a class="nxt__btn" onclick="nextForm();select_features();">Next</a> </div>
+                    </div>
+                </fieldset>
+
+
+                <fieldset class="active__form" id="form4">
+                    <div class="sub__title__container">
+                        <p>Step 4/5</p>
+                        <h2>Experiments Setting</h2>
+                        <p>The settings are auto selected. Change the settings fit with your experiments.</p>
+                    </div>
+
+                    <div class="input__container">
+                        <input type="range" min="1" max="9" value="7" id="btn_split_ratio" class="slider">
+                        <div class="output__value"> </div>
+                        <div class="buttons"> <a class="prev__btn" onclick="prevForm();">Back</a> <a class="nxt__btn" onclick="nextForm();split_select_ratio();">Next</a> </div>
+                    </div>
+                </fieldset>
+
+
+                <fieldset class="active__form" id="form5">
+                    <div class="sub__title__container">
+                        <p>Step 5/5</p>
+                        <h2>Experiment Name</h2>
+                        <p>Please enter experiment name below and crate the experiment</p>
+                    </div>
+                    <div class="input__container"> <label>Enter experiment name</label> <input type="text" name="experiment_name">
+                        <div class="buttons">
+                            <a class="prev__btn" onclick="prevForm();">Back</a>
+                            <input class="btn btn-outline-success" style="width:120px" type="submit" name ="complete" class="submit_btn btn label-success" value="Submit" required>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+    </div>
+
+
+    <ul hidden>
+        <li> <label>FormID: </label><input id="view_id" name="view_id" value="{{ form.view_id }}"> </li>
+        <li> <label>file_id: </label><input id="file_id" name="file_id" value="{{ form.file_id }}"> </li>
+        <li> <label>target_id: </label><input id="target_id" name="target_id" value="{{ form.target_id }}"> </li>
+        <li> <label>features_id: </label><input id="features_id" name="features_id" value="{{ form.features_id }}"> </li>
+        <li> <label>problem_type: </label><input id="problem_type" name="problem_type" value="{{ form.problem_type }}"> </li>
+        <li> <label>score: </label><input id="score" name="score" value="{{ form.score }}"> </li>
+        <li> <label>split_ratio: </label><input id="split_ratio" name="split_ratio" value="{{ form.split_ratio }}"> </li>
+
+    </ul>
+</form>
+
+<link rel="stylesheet" href="{% static 'css/experiment/create.css' %}">
+<script src="{% static 'javascript/experiment/create.js' %}" ></script>
+{% endblock %}

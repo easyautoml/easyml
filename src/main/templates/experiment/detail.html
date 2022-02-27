@@ -1,0 +1,279 @@
+{% extends "base_generic_non_header.html" %}
+
+{% load static %}
+
+{% block content %}
+
+<script type="text/javascript">
+    var feature_importance_label = {{ feature_importance.label |safe}};
+    var feature_importance_data = {{ feature_importance.data }};
+    var model_performance_data = {{ models_performance |safe}};
+</script>
+
+<header>
+
+    <nav class="navbar navbar-dark bg-dark">
+        <ul class="navbar-nav mr-auto" style="float:left">
+
+            <li class="nav-item active" >
+
+                <a class="nav-link" href="{% url 'index' %}">
+                    <img src="{% static 'img/logo.png' %}" height="50px" style="padding-left:30px"/>
+                    <h4>EASYML</h4></a>
+            </li>
+
+        </ul>
+        <ul class="row" style="float:right">
+
+            <div class="header-card bg-c-2">
+                <div class="header-card-block">
+                    <h6 class="m-b-20">Status</h6>
+                    <h3 class="text-right">
+                        <a role="button" href="{% url 'task_detail' experiment_obj.task.task_id %}"><span>&nbsp&nbsp
+                            {% if experiment_obj.task.status == 0 %}
+                                Pending
+                            {% elif experiment_obj.task.status == 1 %}
+                                Running
+                            {% elif experiment_obj.task.status == 2 %}
+                                Success
+                            {% else %}
+                                Fail
+                            {% endif %}
+                        </span></a></h4>
+                        </h3>
+                </div>
+            </div>
+
+            <div class="header-card bg-c-5">
+                <div class="header-card-block">
+                    <h6 class="m-b-20">Target&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp</h6>
+                    <h3 class="text-right"><i class="fa fa-rocket f-left"></i><span>&nbsp&nbsp {{ experiment_obj.target.column_name | truncatechars:15}}</span></h3>
+                </div>
+            </div>
+
+            <div class="header-card bg-c-5">
+                <div class="header-card-block">
+                    <h6 class="m-b-20">Score&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h6>
+                    <h3 class="text-right"><ion-icon class="f-left" name="infinite-outline"></ion-icon><span>&nbsp&nbsp{{ experiment_obj.score }} {{best_model_obj.score_val|floatformat:2 }}</span></h3>
+                </div>
+            </div>
+
+            <div class="header-card bg-c-5">
+                <div class="header-card-block">
+                    <h6 class="m-b-20">Model Type &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h6>
+                    <h3 class="text-right"><i class="fa fa-refresh f-left"></i><span>&nbsp&nbsp {{ experiment_obj.problem_type }}</span></h3>
+                </div>
+            </div>
+
+            <div class="header-card bg-c-5">
+                <div class="header-card-block">
+                    <h6 class="m-b-20">Data &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h6>
+                    <h4 class="text-right"><ion-icon class="f-left" name="reader-outline"></ion-icon>
+                        {% if experiment_obj.file.file_eda.task.status == 2 %}
+                            <a href="{% url 'file_eda' experiment_obj.file.file_id %}"  target="_blank"><span>{{ experiment_obj.file.file_name | truncatechars:15}}</span></a>
+                        {% else %}
+                            <span>{{ experiment_obj.file.file_name | truncatechars:15}}</span>
+                        {% endif %}
+
+                    </h4>
+                </div>
+            </div>
+        </ul>
+    </nav>
+</header>
+<body>
+    <main role="main" >
+        {% if experiment_obj.task.status == 2 %}
+            <div class="form__container">
+                <div class="title__container">
+                    <h1>Experiment Performance</h1>
+                </div>
+
+                <div class="row chart_top">
+                    <div class="col">
+                        <h5 class="title" style="text-align:center">Models Performance</h5>
+                        <canvas id="chart_models" class="chart" ></canvas>
+                    </div>
+
+                    <div class="col">
+                        <h5 class="title" style="text-align:center">Features Importance ({{ best_model_obj.model_name }})</h5>
+                        <canvas id="chart_feature_importance" class="chart"></canvas>
+                    </div>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="table-responsive custom-table-responsive">
+                        <table class="table custom-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Model Name</th>
+                                    <th scope="col">Test Score</th>
+                                    <th scope="col">Validation Score</th>
+                                    <th scope="col">Training Time</th>
+                                    <th scope="col">Predict Time</th>
+
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for model_obj in model_objs %}
+                                    <tr scope="row">
+                                        <td><a href="{% url 'model_detail' model_obj.model_id %}">{{ model_obj.model_name }}
+                                                {% if model_obj.model_id == best_model_obj.model_id %}
+                                                    <ion-icon name="trophy-outline"></ion-icon>
+                                                {% endif %}
+                                            </a>
+                                        </td>
+                                        <td><button type="button" class="btn btn-outline-success btn-sm">&nbsp&nbsp{{ model_obj.score_test|floatformat:3}}</button></td>
+                                        <td><button type="button" class="btn btn-outline-success btn-sm">&nbsp&nbsp{{ model_obj.score_val|floatformat:3}}</button></td>
+
+                                        <td><button type="button" class="btn btn-outline-success btn-sm"><ion-icon name="timer-outline"></ion-icon>&nbsp&nbsp{{ model_obj.fit_time|floatformat:3}}s</button></td>
+                                        <td><button type="button" class="btn btn-outline-success btn-sm"><ion-icon name="timer-outline"></ion-icon>&nbsp&nbsp {{ model_obj.predict_time|floatformat:3}}s</button></td>
+
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="title__container" style="margin-top:30px">
+                    <h1>Prediction
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target=".bd-example-modal-lg">+</button>
+
+                        <div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog">
+                            <div class="modal-dialog modal-lg" role="document">
+                                <div class="modal-content">
+                                    <form id="predict_form" method="post">
+                                        <div class="modal-header">
+                                            <h3 class="modal-title">Create Prediction</h3>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span></button>
+                                        </div>
+
+                                        <div class="modal-body">
+
+                                                <div class="form-group">
+                                                    <label for="predict_name">Predict Name</label>
+                                                    <input type="text" class="form-control" id="predict_name" name="predict_name" aria-describedby="emailHelp" placeholder="Enter Predict Name" required>
+                                                </div>
+
+                                            <div class="input__container">
+                                                <label for="select_model" class="form-label">Model</label>
+                                                <select class="form-select" id="select_model" name="select_model" required>
+                                                    <option selected disabled value="">Choose predict file</option>
+                                                    {% for model_obj in model_objs %}
+                                                        <option value="{{ model_obj.model_id }}">{{ model_obj.model_name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div class="invalid-feedback">Please select a valid state.</div>
+                                            </div>
+
+                                            <div class="input__container">
+                                                <label for="select_file" class="form-label">File</label>
+                                                <select class="form-select" id="select_file" name="select_file" required>
+                                                    <option selected disabled value="">Choose predict file</option>
+                                                    {% for file_obj in file_objs %}
+                                                        <option value="{{ file_obj.file_id }}">{{ file_obj.file_name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div class="invalid-feedback">Please select a valid state.</div>
+                                            </div>
+                                        </div>
+
+                                        <ul hidden>
+                                            <input name="model_id" id="model_id"/>
+                                            <input name="file_id" id="file_id"/>
+                                        </ul>
+
+                                        <div class="modal-footer">
+                                            <input class="btn btn-primary" type="submit" name="create_predict" value="Submit" id="create_predict">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </h1>
+                </div>
+                <div class="card">
+                    <div class="table-responsive custom-table-responsive">
+                        <table class="table custom-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Predict Name</th>
+                                    <th scope="col">Models</th>
+                                    <th scope="col">Create Date</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Download</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for predict_obj in predict_objs %}
+                                    <tr scope="row">
+                                        <td>{{ predict_obj.predict_name }}</td>
+                                        <td>{{ predict_obj.model.model_name }}</td>
+                                        <td>{{ predict_obj.create_datetime }}</td>
+                                        <td>
+                                            {% if predict_obj.task.status  == 0 %}
+                                                PENDING
+                                            {% elif predict_obj.task.status  == 1 %}
+                                                RUNNING
+                                            {% elif predict_obj.task.status  == 2 %}
+                                                SUCCESS
+                                            {% else %}
+                                                FAIL
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if predict_obj.task.status  == 2 %}
+                                                <form method="POST" action="" id="download_predict_form">  {% csrf_token %}
+                                                    <button type="submit" class="btn btn-success" name="download_predict" value="{{ predict_obj.predict_id }}"><ion-icon name="download-outline"></ion-icon></button>
+                                                </form>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-outline-danger" data-toggle="modal" data-target="#delete_confirm" onclick="delete_confirm('{{ predict_obj.predict_id }}', '{{ predict_obj.predict_name }}')">
+                                                <ion-icon name="trash-outline"/>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+    </main>
+</body>
+
+<link rel="stylesheet" href="{% static 'css/experiment/detail.css' %}">
+<script src="{% static 'javascript/experiment/detail.js' %}" ></script>
+
+<div class="modal fade" id="delete_confirm" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <form method="POST" action="" id="delete_predict_form"> {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-body">
+                Are you sure delete <p id="delete_predict_name"/> file ?
+                    <ul hidden>
+                        <li><input type="text" id="delete_predict_id" name="delete_predict_id"></li>
+                    </ul>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger" name="delete_predict" value="delete_predict">Delete</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+</html>

@@ -1,0 +1,17 @@
+/* Used for logo */
+#logo {
+ margin:10px 10px 10px 10px;
+}
+
+a {
+  color: #353535;
+}
+
+.col_label {
+  width:200px;
+  margin-right:10px;
+}
+
+* {
+  font-family: 'Nunito', sans-serif;
+}

@@ -1,0 +1,55 @@
+{% extends "base_generic_non_header.html" %}
+{% load static %}
+
+{% block content %}
+
+<script type="text/javascript">
+    var feature_importance_label = {{ feature_importance.label |safe}};
+    var feature_importance_data = {{ feature_importance.data }};
+</script>
+
+<form action="" method="post" id="main_form">{% csrf_token %}
+    <div class="form__container">
+
+        <div class="title__container">
+            <a href="{% url 'experiment_detail' model_obj.experiment.experiment_id %}"> <img src="{% static 'img/btn_back_white.png' %}" height="25px" style="float:left; padding-right:10px; padding-top:10px"/></a>
+            <h1>{{ model_obj.model_name }}</h1>
+
+        </div>
+
+        <div class="body__container">
+            <button type="submit" class="btn btn-outline-success btn-sm" name="submit_evaluation" value="{{ model_obj.model_id }}">Create Evaluation</button>
+        </div>
+    </div>
+</form>
+
+<!--        <div class="body__container">-->
+<!--            <div class="row">-->
+<!--                <div class="col">-->
+<!--                    <figure class="highcharts-figure">-->
+<!--                        <div id="feature_importance"></div>-->
+<!--                    </figure>-->
+<!--                </div>-->
+
+<!--                <div class="col">-->
+<!--                    <figure class="highcharts-figure">-->
+<!--                        <div id="model_performance"></div>-->
+<!--                    </figure>-->
+<!--                </div>-->
+<!--            </div>-->
+
+<!--        </div>-->
+<!--    </div>-->
+
+<!--</form>-->
+
+<link rel="stylesheet" href="{% static 'css/model/detail.css' %}">
+<link rel="stylesheet" href="{% static 'css/charts/hightcharts.css' %}">
+<script src="{% static 'javascript/model/detail.js' %}" ></script>
+
+<script src="https://code.highcharts.com/highcharts.js"></script>
+<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/modules/export-data.js"></script>
+<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+{% endblock %}

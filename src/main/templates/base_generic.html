@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>EASYML</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {% load static %}
+    <script src="{% static 'javascript/jquery.min.js' %}"></script>
+    <script src="{% static 'javascript/bootstrap.min.js' %}"></script>
+    <script type="module" src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css">
+    <script type="module" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
+    <script type="module" src="https://cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+<header>
+    <nav class="navbar navbar-dark bg-dark">
+
+        <ul class="navbar-nav mr-auto" style="float:left">
+
+          <li class="nav-item active" >
+
+            <a class="nav-link" href="{% url 'index' %}">
+                <img src="{% static 'img/logo.png' %}" height="50px" style="padding-left:30px"/>
+            <h4>EASYML</h4></a>
+          </li>
+
+        </ul>
+
+<!--        <ul class="row" style="float:right">-->
+
+<!--                <div class="header-card bg-c-yellow">-->
+<!--                    <div class="header-card-block">-->
+<!--                        <h6 class="m-b-20">Total Experiments</h6>-->
+<!--                        <h2 class="text-right"><i class="fa fa-rocket f-left"></i><span>486</span></h2>-->
+<!--                    </div>-->
+<!--                </div>-->
+
+<!--                <div class="header-card bg-c-pink">-->
+<!--                    <div class="header-card-block">-->
+<!--                        <h6 class="m-b-20">Running&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h6>-->
+<!--                        <h2 class="text-right"><i class="fa fa-refresh f-left"></i><span>486</span></h2>-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--        </ul>-->
+
+
+    </nav>
+</header>
+<main role="main" >
+    {% block content %}
+
+    {% endblock %}
+</main>
+
+</body>
+</html>
