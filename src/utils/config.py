@@ -1,6 +1,6 @@
 API_URL = "http://localhost:8000"
 
-DEBUG = True
+DEBUG = False
 
 TARGET_PATH = {
     "file_metadata": "file/metadata/",
@@ -8,7 +8,19 @@ TARGET_PATH = {
     "experiment": "experiment",
     "predict": "predict",
     "model": "model",
+
     "evaluation": "evaluation",
+    "evaluation_sub_population": "evaluation/sub_population",
+    "evaluation_predict_actual": "evaluation/evaluation_predict_actual",
+    "evaluation_class": "evaluation/evaluation_class",
+    "evaluation_class_roc_lift": "evaluation/evaluation_class/roc_lift",
+    "evaluation_class_distribution": "evaluation/evaluation_class/distribution",
+
+    "explain": 'explain',
+    "explain_pdp": 'explain/pdp',
+    "explain_pdp_regress": 'explain/pdp/regress',
+    "explain_pdp_class": 'explain/pdp/class',
+    "explain_pdp_class_values": 'explain/pdp/class/values',
 }
 
 TASK_STATUS = {

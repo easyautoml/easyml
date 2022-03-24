@@ -1,55 +1,422 @@
 {% extends "base_generic_non_header.html" %}
 {% load static %}
+{% load mathfilters %}
 
 {% block content %}
 
 <script type="text/javascript">
-    var feature_importance_label = {{ feature_importance.label |safe}};
-    var feature_importance_data = {{ feature_importance.data }};
+    var evaluation_ready = false;
+    var explain_ready = false;
+
+    {% if evaluation_obj != None and evaluation_obj.task.status == 2 %}
+        evaluation_ready = true;
+        var selected_page = {{ selected_page }};
+        var problem_type = "{{ model_obj.experiment.problem_type }}";
+
+        var feature_importance_label = {{ feature_importance.label |safe}};
+        var feature_importance_data = {{ feature_importance.data }};
+
+        {% if explain_obj != None and explain_obj.task.status == 2 %}
+            var pdp_data = {{ pdp_data |safe }}
+            explain_ready = true;
+        {% endif %}
+
+        {% if model_obj.experiment.problem_type == "regression" %}
+            var predict_vs_actual_data = {{ predict_vs_actual |safe}};
+            var residual = {{ residual |safe}};
+
+        {% else %}
+            var roc_chart_data = {{ roc_chart_data |safe }};
+            var lift_chart_data = {{ lift_chart_data |safe }};
+            var predict_distribution = {{ predict_distribution |safe }};
+            var class_scores = {{ class_scores |safe }};
+        {% endif %}
+    {% endif %}
 </script>
 
-<form action="" method="post" id="main_form">{% csrf_token %}
-    <div class="form__container">
 
-        <div class="title__container">
-            <a href="{% url 'experiment_detail' model_obj.experiment.experiment_id %}"> <img src="{% static 'img/btn_back_white.png' %}" height="25px" style="float:left; padding-right:10px; padding-top:10px"/></a>
-            <h1>{{ model_obj.model_name }}</h1>
+<div class="form__container">
 
-        </div>
-
-        <div class="body__container">
-            <button type="submit" class="btn btn-outline-success btn-sm" name="submit_evaluation" value="{{ model_obj.model_id }}">Create Evaluation</button>
+    <div class="title__container">
+        <div class="row">
+            <div class="col-md-8">
+                <a href="{% url 'experiment_detail' model_obj.experiment.experiment_id %}"> <img src="{% static 'img/btn_back_white.png' %}" height="25px" style="float:left; padding-right:10px; padding-top:5px"/></a>
+                <h1>{{ model_obj.model_name }}</h1>
+            </div>
+            <div class="col">
+                {% if evaluation_obj.task.status == 2 %}
+                    <form action="" method="post"  style="float:right; padding-right:10px;">{% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm" name="submit_download" value="{{ evaluation_obj.evaluation_id }}">Download Evaluation</button>
+                    </form>
+                {% endif %}
+            </div>
         </div>
     </div>
-</form>
+    {% if evaluation_obj == None %}
+        <form action="" method="post">{% csrf_token %}
+            <button type="submit" class="btn btn-outline-success btn-sm" name="submit_evaluation" value="{{ model_obj.model_id }}">Create Evaluation</button>
+        </form>
+    {% elif evaluation_obj.task.status == 0 or evaluation_obj.task.status == 1 %}
 
-<!--        <div class="body__container">-->
-<!--            <div class="row">-->
-<!--                <div class="col">-->
-<!--                    <figure class="highcharts-figure">-->
-<!--                        <div id="feature_importance"></div>-->
-<!--                    </figure>-->
-<!--                </div>-->
+        <div class="spinner-grow text-center" style="width: 3rem; height: 3rem;" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
 
-<!--                <div class="col">-->
-<!--                    <figure class="highcharts-figure">-->
-<!--                        <div id="model_performance"></div>-->
-<!--                    </figure>-->
-<!--                </div>-->
-<!--            </div>-->
+    {% elif evaluation_obj.task.status == 2 %}
+        <div class="body__container">
 
-<!--        </div>-->
-<!--    </div>-->
+            <div class="left__container">
+                <div class="side__titles">
+                    <div class="title__name">
+                        <h3>Performance</h3>
+                        <p><a href="#" onclick="displayForms(1);">Metrics</a></p>
+                        <p><a href="#" onclick="displayForms(2);">Feature Importance</a></p>
 
-<!--</form>-->
+                        {% if model_obj.experiment.problem_type != "regression" %}
+                            <p><a href="#" onclick="displayForms(3);">ROC - Lift</a></p>
+                        {% else %}
+                            <p><a href="#" onclick="displayForms(4);">Residual</a></p>
+                        {% endif %}
+                            <p><a href="#" onclick="displayForms(5);">Sub-Population</a></p>
+                    </div>
+                    <div class="title__name">
+                        <h3>Interpretation</h3>
+                        <p><a href="#" onclick="displayForms(6);">Partial Dependence</a></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right__container">
+                <fieldset id="form_metric" style="display:none;">
+                    <h6>Metrics</h6>
+                    <div class="row score">
+                        {% for key, value in scores.items %}
+                            <div class="item">
+                                <h7 class="m-b-20">{{ key }}</h7>
+                                <h4 class="text-right">{{ value |floatformat:2  }}</h4>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </fieldset>
+
+                <fieldset id="form_feature_importance"  style="display:none;">
+                    <div class="col">
+                         <div class="label"><h6>Feature Importance</h6></div>
+                         <figure class="highcharts-figure">
+                            <div id="feature_importance"></div>
+                         </figure>
+                    </div>
+                </fieldset>
+
+                <fieldset id="form_roc"  style="display:none;">
+                    <div class="row" style="padding-top:20px;">
+                        <div class="col-lg-9">
+
+                            <div class="row filter">
+
+                                <div class="col-sm input__container">
+                                    <p>Target Class</p>
+                                    <div class="dropdown" required>
+                                        <form action="" id="form_select_class" method="get">{% csrf_token %}
+                                            <button class="btn dropdown-toggle" type="button" id="selected_class" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" value="">{{ selected_class_name }}</button>
+                                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                                {% for evaluation_class_obj in evaluation_class_objs %}
+                                                    <a class="dropdown-item" href="#" onclick="select_class('{{ evaluation_class_obj.evaluation_class_id }}', '{{ evaluation_class_obj.evaluation_class_name }}');">
+                                                        {{ evaluation_class_obj.evaluation_class_name }}</a>
+                                                {% endfor %}
+                                            </div>
+
+                                            <ul hidden>
+                                                <li><input name="form_selected_class_id" id="form_selected_class_id" value=""/></li>
+                                                <li><input name="form_selected_class_name" id="form_selected_class_name" value=""/></li>
+                                                <li><input name="form_selected_page" id="form_selected_page" value=""/></li>
+                                            </ul>
+                                        </form>
+                                    </div>
+                                </div>
+
+                                <div class="col-sm">
+                                    <div class="input__container">
+                                        <div class="output__value"> </div>
+                                        <input type="range" min="0" max="100" value="50" id="btn_threshold" class="slider" onchange="threshold_change()"/>
+
+                                    </div>
+                                </div>
+
+                                <div class="col-sm"></div>
+                            </div>
+
+                            <!-- Class Score -->
+                            <div class="row score" id="class_score"></div>
+
+                        </div>
+
+                        <!-- Confusion Matrix -->
+                        <div class="col">
+                            <table class="table confusion_matrix">
+                                <tbody>
+                                    <tr>
+                                        <th colspan="2"></th>
+                                        <th colspan="2" style="text-align:center;">Actual</th>
+                                    </tr>
+                                    <tr>
+                                        <th colspan="2"></th>
+                                        <th scope="col" id="actual_true"></th>
+                                        <th scope="col" id="actual_false"></th>
+                                    </tr>
+                                    <tr scope="row">
+                                        <th rowspan="2">Predict</th>
+                                        <th id="predict_true">True</th>
+                                        <td id="tp" style="text-align:center;"></td>
+                                        <td id="fp" style="color:#ff6666; text-align:center;"></td>
+                                    </tr>
+                                    <tr scope="row">
+                                        <th id="predict_false"></th>
+                                        <td id="fn" style="color:#ff6666; text-align:center;"></td>
+                                        <td id="tn" style="text-align:center;"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+
+                    <div class="row" style="padding-top:50px;">
+                        <figure class="highcharts-figure">
+                            <div id="roc_chart"></div>
+                        </figure>
+                        <figure class="highcharts-figure">
+                            <div id="distribution_chart"></div>
+                        </figure>
+                        <figure class="highcharts-figure">
+                            <div id="lift_chart"></div>
+                        </figure>
+                    </div>
+                </fieldset>
+
+                <fieldset id="form_residual" style="display:none;">
+                    <div class="row" style="padding-top:20px;">
+                        <div col>
+                            <figure class="highcharts-figure">
+                                <div id="predict_vs_actual"></div>
+                            </figure>
+                        </div>
+                        <div col>
+                            <figure class="highcharts-figure">
+                                <div id="residual"></div>
+                            </figure>
+                        </div>
+
+                    </div>
+                </fieldset>
+
+                <fieldset id="form_sub_population" style="display:none;">
+
+                    <form action="" id="form_select_feature" method="get">{% csrf_token %}
+                    <div class="row">
+                        <p style="padding-top:5px; padding-left:50px;padding-right:50px;">Select your feature</p>
+                        <div class="input__container dropdown" style="padding-right:10px" required>
+
+                            <button style="width:300px"  class="btn dropdown-toggle" type="submit" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" value="">
+                                {{selected_column_name}}</button>
+
+                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                {% for column in file_metadata_objs %}
+                                <a class="dropdown-item" href="#" onclick="select_feature('{{ column.file_metadata_id }}', '{{ column.column_name  }}');">{{ column.column_name }}</a>
+                                {% endfor %}
+                            </div>
+
+                            <ul hidden>
+                                <li><input name="form_selected_column_id" id="form_selected_column_id" value="{{selected_column_id}}"/></li>
+                                <li><input name="form_selected_column_name" id="form_selected_column_name" value="{{selected_column_name}}"/></li>
+                                <li><input name="form_selected_page" value="5"></li>
+                            </ul>
+                        </div>
+                        {% if sub_population_obj is None %}
+                            <div class="col-sm input__container">
+                                <button type="submit" class="btn" name="form_calculate_sub_population" value="">Compute</button>
+                            </div>
+                        {% else %}
+
+                            {% if sub_population_obj.task.status == 1 or sub_population_obj.task.status == 0%}
+                                <div class="spinner-grow text-center" style="width: 3rem; height: 3rem;" role="status">
+                                    <span class="sr-only">Loading...</span>
+                                </div>
+                            {% elif sub_population_obj.task.status == 3 %}
+                                <a role="button" href="{% url 'task_detail' sub_population_obj.task.task_id %}"><span>Sub population calculation were fail</span></a>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                    </form>
+
+                    {% if sub_population_obj.task.status == 2 %}
+
+
+                        {% if model_obj.experiment.problem_type == "regression" %}
+                            <table class="table custom-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Feature Value</th>
+                                        <th scope="col">R2</th>
+                                        <th scope="col">MSE</th>
+                                        <th scope="col">MAE</th>
+                                        <th scope="col">MAPE</th>
+                                        <th scope="col">Median Absolute Error</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sub_popul in sub_population_obj.sub_population %}
+                                        <div>
+                                        <tr scope="row" data-toggle="collapse" data-target="#sub_regress{{ forloop.counter }}" role="button" aria-expanded="false" aria-controls="sub_regress{{ forloop.counter }}">
+                                                <td><h6>{{ sub_popul.sample_percent | mul:100 |floatformat:0 }}% - {{ sub_popul.group_name |title }}</h6></td>
+                                                <td>{{ sub_popul.r2 |floatformat:2 }}</td>
+                                                <td>{{ sub_popul.mean_squared_error | floatformat:2 }}</td>
+                                                <td>{{ sub_popul.mean_absolute_error | floatformat:2 }}</td>
+                                                <td>{{ sub_popul.mean_absolute_percentage_error | floatformat:2 }}</td>
+                                                <td>{{ sub_popul.median_absolute_error | floatformat:2 }}</td>
+
+                                        </tr>
+                                        </div>
+                                        <tr scope="row">
+                                            <td colspan="7" style="border:none;">
+                                                <div class="collapse sub_confusion_matrix" id="sub_regress{{ forloop.counter }}">
+                                                    <div class="col align-self-center" id="sub_regress_residual_{{ forloop.counter }}">
+                                                        <!-- TODO : Visualize some thing at here-->
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <table class="table custom-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Feature Value</th>
+                                        <th scope="col">Accuracy</th>
+                                        <th scope="col">Recall</th>
+                                        <th scope="col">Precision</th>
+                                        <th scope="col">F1</th>
+                                        <th scope="col">Balanced Accuracy</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for sub_popul in sub_population_obj.sub_population %}
+                                        <tr onclick="draw_sub_population_confusion('sub_confu_{{forloop.counter}}', {{ sub_popul.confusion }}); draw_sub_population_density('sub_density_{{forloop.counter}}', {{ sub_popul.density }})"
+                                            scope="row" data-toggle="collapse" data-target="#sub_{{ forloop.counter }}" role="button" aria-expanded="false" aria-controls="sub_{{ forloop.counter }}">
+                                                <td><h6>{{ sub_popul.sample_percent | mul:100 |floatformat:0 }}% - {{ sub_popul.group_name |title }}</h6></td>
+                                                <td>{{ sub_popul.accuracy |floatformat:2 }}</td>
+                                                <td>{{ sub_popul.recall_score |floatformat:2 }}</td>
+                                                <td>{{ sub_popul.precision_score |floatformat:2 }}</td>
+                                                <td>{{ sub_popul.f1 |floatformat:2 }}</td>
+                                                <td>{{ sub_popul.balanced_accuracy_score |floatformat:2 }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td colspan="7" style="border:none;">
+                                                <div class="collapse sub_confusion_matrix" id="sub_{{ forloop.counter }}">
+                                                    <div class="row">
+                                                        <div class="col align-self-center" id="sub_confu_{{forloop.counter}}">
+                                                        </div>
+
+                                                        <div class="col" id="sub_density_{{forloop.counter}}">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+
+                        {% endif %}
+                    {% endif %}
+
+                </fieldset>
+
+                <fieldset id="form_pdp" style="display:none;">
+                    {% if explain_obj %}
+
+                        {% if explain_obj.task.status == 2 %}
+                            <form action="" id="form_pdp_feature" method="get">{% csrf_token %}
+                                <div class="row">
+                                    <p style="padding-top:5px; padding-left:50px;padding-right:50px;">Select your feature</p>
+                                    <div class="input__container dropdown" style="padding-right:10px" required>
+
+                                        <button style="width:300px"  class="btn dropdown-toggle" type="submit" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" value="">
+                                            {{form_selected_explain_pdp_feature}}</button>
+
+                                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                            {% for explain_pdp_obj in explain_pdp_objs %}
+                                                <a class="dropdown-item" href="#" onclick="select_pdp_feature('{{ explain_pdp_obj.explain_pdp_id }}', '{{ explain_pdp_obj.feature  }}');">{{ explain_pdp_obj.feature }}</a>
+                                            {% endfor %}
+                                        </div>
+
+                                    </div>
+
+                                    {% if model_obj.experiment.problem_type != "regression" %}
+                                        <p style="padding-top:5px; padding-left:50px;padding-right:50px;">Target class</p>
+                                        <div class="input__container dropdown" style="padding-right:10px" required>
+                                            <button style="width:300px"  class="btn dropdown-toggle" type="submit" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" value="">
+                                                {{ form_selected_explain_pdp_class }}</button>
+
+
+                                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                                {% for explain_pdp_class_obj in explain_pdp_class_objs %}
+                                                    <a href="#" onclick="select_pdp_class('{{ explain_pdp_class_obj.explain_pdp_class_id }}', '{{ explain_pdp_class_obj.class_name  }}');">{{ explain_pdp_class_obj.class_name }}</a>
+                                                {% endfor %}
+                                            </div>
+
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <ul hidden>
+                                    <li><input name="form_selected_explain_pdp_id" id="form_selected_explain_pdp_id" value='{{form_selected_explain_pdp_id}}'/></li>
+                                    <li><input name="form_selected_explain_pdp_feature" id="form_selected_explain_pdp_feature" value="{{ form_selected_explain_pdp_feature }}"/></li>
+                                    <li><input name="form_selected_explain_pdp_class" id="form_selected_explain_pdp_class" value="{{ form_selected_explain_pdp_class }}"/></li>
+                                    <li><input name="form_selected_explain_pdp_class_id" id="form_selected_explain_pdp_class_id" value="{{form_selected_explain_pdp_class_id}}"/></li>
+                                    <li><input name="form_selected_page" value="6"/></li>
+                                </ul>
+                            </form>
+
+                            <div id="pdp_chart" style="padding-top:30px"></div>
+
+                        {% elif explain_obj.task.status == 3 %}
+                            <a role="button" href="{% url 'task_detail' explain_obj.task.task_id %}"><span>Evaluation Fail</span></a>
+                        {% else %}
+                            <div class="spinner-grow text-center" style="width: 3rem; height: 3rem;" role="status">
+                                <span class="sr-only">Loading...</span>
+                            </div>
+                        {% endif %}
+
+                    {% else %}
+                        <form action="" method="post">{% csrf_token %}
+                            <button type="submit" class="btn btn-outline-success btn-sm" name="submit_explain" value="{{ evaluation_obj.evaluation_id }}">Run Explain</button>
+                        </form>
+                    {% endif %}
+
+                </fieldset>
+            </div>
+        </div>
+    {% elif evaluation_obj.task.status == 3 %}
+        <a role="button" href="{% url 'task_detail' evaluation_obj.task.task_id %}"><span>Evaluation Fail</span></a>
+    {% endif %}
+</div>
+
 
 <link rel="stylesheet" href="{% static 'css/model/detail.css' %}">
 <link rel="stylesheet" href="{% static 'css/charts/hightcharts.css' %}">
-<script src="{% static 'javascript/model/detail.js' %}" ></script>
-
 <script src="https://code.highcharts.com/highcharts.js"></script>
-<script src="https://code.highcharts.com/modules/exporting.js"></script>
+<script src="https://code.highcharts.com/highcharts-more.js"></script>
 <script src="https://code.highcharts.com/modules/export-data.js"></script>
 <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
+
+<script src="{% static 'javascript/model/explain.js' %}" ></script>
+<script src="{% static 'javascript/model/sub_population.js' %}" ></script>
+<script src="{% static 'javascript/model/binary_chart.js' %}" ></script>
+<script src="{% static 'javascript/model/regression_chart.js' %}" ></script>
+<script src="{% static 'javascript/model/detail.js' %}" ></script>
+<script src="{% static 'javascript/echarts.min.js' %}" ></script>
 
 {% endblock %}

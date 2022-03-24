@@ -1,12 +1,22 @@
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
 from django.apps import apps
 from collections import defaultdict
 
 
 SCORE = {
     "root_mean_squared_error": "RMSE",
-    "mean_absolute_error": "MAE"
+    "mean_absolute_error": "MAE",
+    "r2": "R2",
+    "pearsonr": "PEARSON",
+    "mean_squared_error": "MSE",
+    "mean_absolute_error": "MAE",
+    "f1": "F1",
+    "accuracy": "Accuracy",
+    "precision": "Precision",
+    "recall": "Recall",
+    "roc_auc": "ROC AUC",
+    "mcc": "MCC",
+    "balanced_accuracy": "Balanced ACC",
 }
 
 
@@ -197,6 +207,10 @@ class Model(models.Model):
 
     predict_label_encode = models.JSONField(null=True)
 
+    @staticmethod
+    def create_model_id(experiment_id, model_name):
+        return "{}_{}".format(experiment_id, model_name)
+
 
 class Predict(models.Model):
     predict_id = models.CharField(
@@ -290,6 +304,10 @@ class Evaluation(models.Model):
 
     is_delete = models.BooleanField(null=True)
 
+    scores = models.JSONField(null=True)
+
+    confusion = models.JSONField(null=True)
+
     @staticmethod
     def get_evaluation_api(evaluation_id):
 
@@ -305,6 +323,103 @@ class Evaluation(models.Model):
         }
 
         return {'code': 200, 'description': 'Success', 'result': evaluation_info}
+
+    @staticmethod
+    def get_default_evaluation(model_id):
+        evaluation_obj = Evaluation.objects.filter(model_id__exact=model_id).filter(file=None)
+
+        if len(evaluation_obj) >= 1:
+            evaluation_obj = evaluation_obj[0]
+        else:
+            evaluation_obj = None
+
+        return evaluation_obj
+
+
+class EvaluationPredictActual(models.Model):
+    evaluation_predict_actual_id = models.AutoField(
+        primary_key=True
+    )
+
+    evaluation = models.ForeignKey(
+        'Evaluation',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    predict_vs_actual = models.JSONField(null=True)
+
+
+class EvaluationClass(models.Model):
+    evaluation_class_id = models.CharField(
+        primary_key=True,
+        null=False,
+        max_length=100
+    )
+
+    evaluation_class_name = models.CharField(max_length=200, null=True)
+
+    evaluation = models.ForeignKey(
+        'Evaluation',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+
+class EvaluationClassRocLift(models.Model):
+    evaluation_class_roc_lift_id = models.AutoField(
+        primary_key=True
+    )
+
+    scores = models.JSONField(null=True)
+
+    evaluation_class = models.ForeignKey(
+        'EvaluationClass',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+
+class EvaluationClassDistribution(models.Model):
+    evaluation_class_distribution_id = models.AutoField(
+        primary_key=True
+    )
+
+    evaluation_class = models.ForeignKey(
+        'EvaluationClass',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    predict_distribution = models.JSONField(null=True)
+
+
+class EvaluationSubPopulation(models.Model):
+    sub_population_id = models.CharField(
+        primary_key=True,
+        null=False,
+        max_length=100
+    )
+
+    file_metadata = models.ForeignKey(
+        'FileMetadata',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    evaluation = models.ForeignKey(
+        'Evaluation',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    task = models.ForeignKey(
+        'Task',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    sub_population = models.JSONField(null=True)
 
 
 class Task(models.Model):
@@ -364,3 +479,98 @@ class BulkCreateManager(object):
             if len(objs) > 0:
                 self._commit(apps.get_model(model_name))
 
+
+class Explain(models.Model):
+    explain_id = models.CharField(
+        primary_key=True,
+        null=False,
+        max_length=100
+    )
+
+    task = models.ForeignKey(
+        'Task',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    evaluation = models.ForeignKey(
+        'Evaluation',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    @staticmethod
+    def get_explain_api(explain_id):
+        try:
+            explain_obj = Explain.objects.get(pk=explain_id)
+        except Explain.DoesNotExist:
+            return {'code': 404, 'description': 'Experiment id does not exist'}
+
+        file_id = None if explain_obj.evaluation.file is None else explain_obj.evaluation.file.file_id
+        explain_info = {
+            "experiment_id": explain_obj.evaluation.model.experiment.experiment_id,
+            "file_id": file_id,
+            "model_name": explain_obj.evaluation.model.model_name,
+        }
+
+        return {'code': 200, 'description': 'Success', 'result': explain_info}
+
+
+class ExplainPdp(models.Model):
+    explain_pdp_id = models.CharField(
+        primary_key=True,
+        null=False,
+        max_length=100
+    )
+
+    explain = models.ForeignKey(
+        'Explain',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    feature = models.CharField(max_length=100, null=True)
+
+
+class ExplainPdpRegress(models.Model):
+    explain_pdp_regress_id = models.AutoField(
+        primary_key=True
+    )
+
+    explain_pdp = models.ForeignKey(
+        'ExplainPdp',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    pdp_values = models.JSONField(null=True)
+
+
+class ExplainPdpClass(models.Model):
+    explain_pdp_class_id = models.CharField(
+        primary_key=True,
+        null=False,
+        max_length=100
+    )
+
+    explain_pdp = models.ForeignKey(
+        'ExplainPdp',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    class_name = models.CharField(max_length=100, null=True)
+
+
+class ExplainPdpClassValues(models.Model):
+    pdp_id = models.AutoField(
+        primary_key=True
+    )
+
+    explain_pdp_class = models.ForeignKey(
+        'ExplainPdpClass',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    pdp_values = models.JSONField(null=True)

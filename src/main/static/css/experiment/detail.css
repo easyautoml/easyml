@@ -17,28 +17,14 @@
 /*
 CSS FOR HEADER CART
 */
-.bg-c-1 {
-    background: linear-gradient(to right, #f94144, #f94144);
-}
 
-.bg-c-2 {
-    background: linear-gradient(45deg,#f3722c,#f3722c);
-}
-
-.bg-c-3 {
-    background: linear-gradient(45deg,#f8961e,#f8961e);
-}
-
-.bg-c-4 {
-     background: linear-gradient(45deg,#90be6d,#90be6d);
-}
-
-.bg-c-5 {
-     background: linear-gradient(45deg,#00b4d8,#ade8f4);
+.bg-c {
+    background: #0a9396;
 }
 
 .header-card {
     border-radius: 5px;
+    width:240px;
     -webkit-box-shadow: 0 1px 2.94px 0.06px rgba(4,26,55,0.16);
     box-shadow: 0 1px 2.94px 0.06px rgba(4,26,55,0.16);
     border: none;
@@ -47,8 +33,16 @@ CSS FOR HEADER CART
     transition: all 0.3s ease-in-out;
 }
 
+.header-card a {
+  color: white;
+}
+
+.header-card .text-right{
+  color: white;
+}
+
 .header-card .header-card-block {
-    padding: 20px;
+    padding: 10px;
 }
 
 .f-left {

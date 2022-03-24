@@ -1,41 +1,27 @@
 :root {
     --primary-color: #041C32;
-    --secondary-color: #EEEEEE;
-    --shadow-color: #EEEEEE
-}
-
-.bg-c-1 {
-    background: linear-gradient(to right, #f94144, #f94144);
-}
-
-.bg-c-2 {
-    background: linear-gradient(45deg,#f3722c,#f3722c);
-}
-
-.bg-c-3 {
-    background: linear-gradient(45deg,#f8961e,#f8961e);
+    --secondary-color: white;
+    --shadow-color: white;
 }
 
 .bg-c-4 {
-     background: linear-gradient(45deg,#90be6d,#90be6d);
-}
-
-.bg-c-5 {
-     background: linear-gradient(45deg,#00b4d8,#ade8f4);
+     background: #293241;
 }
 
 .header-card {
-    border-radius: 5px;
+    width:150px;
+    border-radius: 2px;
     -webkit-box-shadow: 0 1px 2.94px 0.06px rgba(4,26,55,0.16);
     box-shadow: 0 1px 2.94px 0.06px rgba(4,26,55,0.16);
     border: none;
     margin: 10px 3px 3px 3px;
     -webkit-transition: all 0.3s ease-in-out;
     transition: all 0.3s ease-in-out;
+    color: #00FFFF;
 }
 
 .header-card .header-card-block {
-    padding: 20px;
+    padding: 5px;
 }
 
 body{
@@ -45,25 +31,49 @@ body{
 
 .input__container a {
     padding: 0.5rem 0.5rem;
-    color: var(--shadow-color);
+    color: black;
 }
 
 .input__container p {
-    color: var(--secondary-color);
+    color: white;
     font-size: 0.75rem;
 }
 
 .form__container {
-    margin-top: 0rem;
+    margin-top: 0.5rem;
     background-color: var(--primary-color);
-    border-radius: 0rem;
+    border-radius: 2rem;
     padding-left: 1rem;
+}
+
+.left__container {
+    width: 10%;
+    display: flex;
+    justify-content: center;
+    border-right: 1px solid #42434e;
+    padding: 1rem 0;
+    margin-right: 2rem;
+    padding-right: 1.8rem
+}
+
+.left__container a {
+    color: white;
+}
+
+.right__container {
+    width: 87%;
+    display: block;
+    padding: 1rem 0rem
+}
+
+.right__container fieldset {
+    border: none
 }
 
 .title__container {
     width: 100%;
-    height: 7rem;
-    padding: 2rem 0rem;
+    height: 4rem;
+    padding: 1rem 0rem;
     padding-bottom: 0rem;
     border-bottom: 1px solid #42434e
 }
@@ -72,7 +82,7 @@ body{
     letter-spacing: 2px;
     color: var(--secondary-color);
     font-size: 1.5rem;
-    margin-bottom: 0.2rem
+    margin-bottom: 0.2rem;
 }
 
 .title__container p {
@@ -81,7 +91,8 @@ body{
 }
 
 .body__container {
-    width:100%;
+    display: flex;
+    height:900px
 }
 
 .title__name {
@@ -98,19 +109,10 @@ body{
 }
 
 .title__name p {
-    text-align: right;
+    text-align: left;
     color: var(--shadow-color);
-    font-size: 0.75rem
-}
-
-.right__container {
-    width: 100%;
-    display: none;
-    padding: 1.5rem 1.5rem
-}
-
-.right__container fieldset {
-    border: none
+    font-size: 0.75rem;
+    padding-left: 0.5rem
 }
 
 .sub__title__container {
@@ -133,15 +135,177 @@ body{
     display: none
 }
 
-.input__container {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    margin-top: 1.25rem
+.input__container  {
+    color: white;
+    font-size: 0.75rem;
+    margin-bottom: 0.2rem;
+
+}
+.label {
+    text-align-last: center;
 }
 
-.input__container label {
-    color: #005f73;
-    font-size: 0.75rem;
-    margin-bottom: 0.4rem
+.btn{
+    color: white;
+    border: 1px solid white;
+}
+
+.btn:hover{
+    color: white;
+}
+
+.slider {
+    display: flex;
+    align-items: center;
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 0.3rem;
+    background: white;
+    outline: none;
+    opacity: 0.8;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+    position: relative;
+    margin-top:2rem
+}
+
+.slider:hover {
+    opacity: 0.7
+}
+
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: white;
+    cursor: pointer;
+    position: relative
+}
+
+.slider::-webkit-range-thumb {
+    width: 50px;
+    height: 50px;
+    background: white;
+    cursor: pointer;
+    position: relative
+}
+
+.filter {
+    padding: 10px 10px 10px 10px;
+
+    /* From https://css.glass */
+    background: rgba(124, 185, 206, 0.2);
+    border-radius: 10px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    border: 1px solid rgba(124, 185, 206, 0.3);
+}
+
+.score {
+
+    padding: 10px 10px 10px 10px;
+    margin-top: 20px;
+    border-radius: 3px;
+    background: rgba(124, 185, 206, 0.2);
+    border-radius: 10px;
+    -webkit-backdrop-filter: blur(7px);
+    border: 1px solid rgba(124, 185, 206, 0.3);
+}
+
+.chart {
+    background: #293241;
+    padding: 10px 10px 10px 10px;
+    margin-top: 20px;
+    border-radius: 3px;
+}
+
+.score .item {
+
+     padding-left: 1rem;
+     padding-right: 2rem;
+     padding-top: 1rem;
+     padding-bottom: 1rem;
+     border-right: 1px solid #3a5d76;
+}
+
+.confusion_matrix {
+    color: #00FFFF;
+    background-color:rgba(124, 185, 206, 0.2);
+    border-radius: 10px;
+    -webkit-backdrop-filter: blur(7px);
+
+}
+
+.confusion_matrix th{
+    padding-top: 5px;
+    padding-bottom: 3px;
+    border: 0px;
+    vertical-align: middle;
+    text-align:center;
+    color:white;
+}
+
+.confusion_matrix td{
+    border: 0px;
+    font-size: 2.5rem;
+}
+
+/*
+CSS FOR TABLE
+*/
+.custom-table {
+    margin-top:20px;
+}
+
+.custom-table thead tr, .custom-table thead th {
+    border-top: none;
+    border-bottom: none !important;
+    color: white;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: .2rem;
+}
+
+.custom-table tbody th, .custom-table tbody td {
+    color: #80e3ff;
+    font-weight: 400;
+    font-weight: 300;
+    -webkit-transition: .3s all ease;
+    font-size: 15px;
+    -o-transition: .3s all ease;
+    transition: .3s all ease; }
+
+.custom-table tbody tr:hover td .more, .custom-table tbody tr:focus td .more {
+    color: #fdd114;
+}
+
+.custom-table tbody tr, .custom-table tbody td {
+    padding-top: 1rem;
+    font-size: 15px;
+    border-color: #07233c;
+}
+
+/*
+Confusion matrix inside of subpopulation chart
+*/
+.sub_confusion_matrix{
+    background-color: #0c263c;
+    padding-left:200px;
+}
+
+.sub_confusion_matrix tbody tr, .sub_confusion_matrix tbody th, .sub_confusion_matrix tbody td {
+    border:none;
+    text-align: center;
+    color: white;
+    font-size: 15px;
+    padding: 10px;
+}
+
+.sub_confusion_matrix tbody tr:hover td, .sub_confusion_matrix tr:focus td
+{
+    color: #85ffa5;
 }

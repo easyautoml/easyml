@@ -31,7 +31,7 @@ def post(data, target_path, times=1):
             break
         except Exception as e:
             raise Exception("PATH {}. No connection could be made because "
-                            "the target machine actively refused it. {}".format(url, e))
+                            "the target machine actively refused it. {}. Data {}".format(url, e, data))
 
     if response_content.get('code') != 200:
         raise Exception("ERROR : {}, URL PATH : {}, DATA : {}".format(response_content, url, data))
