@@ -58,6 +58,24 @@ CELERY_BROKER_URL = 'redis://:@<REDIS_IP>:6379'
 CELERY_RESULT_BACKEND = 'redis://:@<REDIS_IP>:6379'
 ```
 
+*Step 3. Add mlpatform urls*
+create a `urls.py` inside the `mlplatform` folder, and add
+
+```python
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('main.urls')),
+]
+```
+
+```commandline
+CELERY_BROKER_URL = 'redis://:@<REDIS_IP>:6379'
+CELERY_RESULT_BACKEND = 'redis://:@<REDIS_IP>:6379'
+```
+
 # 3. Start Service
 
 Make sure you run bellow comment inside /easyml/src folder
