@@ -79,7 +79,7 @@ WSGI_APPLICATION = 'mlplatform.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'mlplatform',
+        'NAME': 'mlplatform1',
         'USER': 'postgres',
         'PASSWORD': 'password',
         'HOST': '192.168.11.11',

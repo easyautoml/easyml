@@ -18,9 +18,6 @@ Feel free to reach out to me on LinkedIn (http://www.linkedin.com/in/lucnguyenvn
 
 ## 2. How to use EasyML
 
-Main Page
-![img.png](docs/img/img.png)
-
 ### 2.1 Upload Data and analysis your data
 After build the model, you need upload data by click on **File Management** button.
 System now only accept csv file. I will upgrade soon that help customer can upload other file like excel, text.
@@ -43,7 +40,5 @@ Although, you can make a prediction with best model score.
 
 ### 4. Model Evaluations
 By click on models in Leaderboard, you can check more detail about model performance.
-
-This function still implementing. I will release it as soon as possible.
 
 ![img_5.png](docs/img/img_5.png)

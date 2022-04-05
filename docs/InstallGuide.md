@@ -7,7 +7,7 @@
 Lib I used to build Auto machine learning :
 - Autogluon
 
-![img.png](img.png)
+![img.png](img/install/img.png)
 
 # 2. Install
 
@@ -69,6 +69,10 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
+Result
+
+![img_2.png](img/install/img_2.png)
+
 *Step 2. Start Service*
 ```commandline
 # Start django service
@@ -80,3 +84,11 @@ celery -A mlplatform flower --port=5555
 # Start worker
 celery -A mlplatform worker -s /tmp/tmp.db --pool=solo -l info
 ```
+
+
+**Flower UI**
+![img_3.png](img/install/img_3.png)
+
+
+**AUTOML UI**
+![img_3.png](img/install/img_1.png)
