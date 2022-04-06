@@ -23,7 +23,7 @@ def post(data, target_path, times=1):
                                      # headers=headers
                                      )
 
-            response_content = json.loads(response.content, encoding="utf8-")
+            response_content = json.loads(response.content, encoding="utf-8")
 
             if response_content.get('code') != 200:
                 time.sleep(3)
@@ -60,7 +60,7 @@ def get(target_path, params={}, times=1):
                                         # headers=headers
                                         )
 
-            response_content = json.loads(response.content, encoding="utf8-")
+            response_content = json.loads(response.content, encoding="utf-8")
 
             if response_content.get('code') == 200:
                 return response_content.get("result")
