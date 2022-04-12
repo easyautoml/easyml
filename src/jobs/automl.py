@@ -719,7 +719,7 @@ class Explain:
 
         if self.predictor.problem_type == "regression":
             df_shap = pd.DataFrame(shap_values, columns=model.features)
-            df_shap["expected_value"] = explainer.expected_value[0]
+            df_shap["expected_value"] = explainer.expected_value
             return df_shap
         else:
             shap_values_multi_class = {}
