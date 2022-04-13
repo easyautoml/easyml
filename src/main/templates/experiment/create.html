@@ -126,10 +126,19 @@
                             Select Score!
                           </button>
                           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                              <div id="drp_score_binary">
+                                <div id="drp_score_binary">
                                   <a class="dropdown-item" href="#" onclick="select_score('accuracy')">accuracy</a>
                                   <a class="dropdown-item" href="#" onclick="select_score('f1')">f1</a>
-                                  <a class="dropdown-item" href="#" onclick="select_score('precision')">precision</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('average_precision')">average_precision</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('roc_auc')">roc_auc</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('log_loss')">log_loss</a>
+                              </div>
+                              <div id="drp_score_multiclass">
+                                  <a class="dropdown-item" href="#" onclick="select_score('accuracy')">accuracy</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('f1_micro')">f1_micro</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('f1_macro')">f1_macro</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('f1_weighted')">f1_weighted</a>
+                                  <a class="dropdown-item" href="#" onclick="select_score('average_precision')">average_precision</a>
                                   <a class="dropdown-item" href="#" onclick="select_score('roc_auc')">roc_auc</a>
                                   <a class="dropdown-item" href="#" onclick="select_score('log_loss')">log_loss</a>
                               </div>
