@@ -20,6 +20,7 @@ $(document).ready(function() {
         progressBar();
         $("#drp_score_regression").hide();
         $("#drp_score_binary").hide();
+        $("#drp_score_multiclass").hide();
 
     });
 
@@ -44,11 +45,17 @@ function select_problem(problem){
     $('#problem_type').val(problem);
     $('#btn_score').text("Select Score!");
 
-    if(problem == 'regression'){
-        $("#drp_score_binary").hide();
+     if(problem == 'regression'){
         $("#drp_score_regression").show();
-    } else {
+        $("#drp_score_binary").hide();
+        $("#drp_score_multiclass").hide();
+    } else if(problem == 'binary'){
         $("#drp_score_binary").show();
+        $("#drp_score_regression").hide();
+        $("#drp_score_multiclass").hide();
+    }else{
+        $("#drp_score_multiclass").show();
+        $("#drp_score_binary").hide();
         $("#drp_score_regression").hide();
     }
 }
