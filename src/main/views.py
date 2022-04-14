@@ -642,6 +642,59 @@ def experiment_detail(request, pk):
         predict_obj.save()
 
         return redirect("experiment_detail", pk=pk)
+    
+    # Processing prediction on external file
+    if request.POST.get('create_predict_external') and request.FILES.get('upload_file_external'):
+        upload_file = request.FILES.get('upload_file_external')
+        model_id = request.POST.get('select_model_external')
+        predict_name = request.POST.get('predict_name_external')
+        
+        # upload file and save to database
+        file_id = uuid.uuid1()
+        file_path = get_file_url(file_id)
+        default_storage.save(file_path, upload_file)
+        
+        task_id = upload_file_task.delay(file_id)
+        task_id = str(task_id)
+
+        task_obj = Task(
+                task_id=task_id,
+                status=config.TASK_STATUS.get('PENDING')
+            )
+        task_obj.save()
+
+        # Save file info
+        file_obj = File(
+                file_id=file_id, file_name='{}'.format(upload_file),
+                file_path=file_path, is_delete=False, task=task_obj
+            )
+        file_obj.save()
+        
+        predict_id = str(uuid.uuid1())
+        # Task
+        predict_task_id = predict_task.delay(predict_id)
+
+        predict_task_obj = Task(
+                task_id=predict_task_id,
+                status=config.TASK_STATUS.get('PENDING')
+            )
+        predict_task_obj.save()
+
+        file_obj = File.objects.get(pk=file_id)
+        model_obj = Model.objects.get(pk=model_id)
+
+        predict_obj = Predict(
+            predict_id=predict_id,
+            predict_name=predict_name,
+            file=file_obj,
+            model=model_obj,
+            is_delete=False,
+            experiment_id=pk,
+            task=task_obj,
+        )
+        predict_obj.save()
+
+        return redirect("main:experiment_detail", pk=pk)
 
     # Processing delete predict
     if request.POST.get("delete_predict"):
