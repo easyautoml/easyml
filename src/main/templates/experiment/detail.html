@@ -140,7 +140,8 @@
 
                 <div class="title__container" style="margin-top:30px">
                     <h1>Prediction
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target=".bd-example-modal-lg">+</button>
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target=".bd-example-modal-lg">Internal +</button>
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target=".bd-example-modal-lg-external">External +</button>
 
                         <div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog">
                             <div class="modal-dialog modal-lg" role="document">
@@ -191,6 +192,59 @@
 
                                         <div class="modal-footer">
                                             <input class="btn btn-primary" type="submit" name="create_predict" value="Submit" id="create_predict">
+                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal fade bd-example-modal-lg-external" tabindex="-1" role="dialog">
+                            <div class="modal-dialog modal-lg" role="document">
+                                <div class="modal-content">
+                                    <form id="predict_form_external" method="post" enctype="multipart/form-data">
+                                        {% csrf_token %}
+                                        <div class="modal-header">
+                                            <h3 class="modal-title">Create External Prediction</h3>
+                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                <span aria-hidden="true">&times;</span></button>
+                                        </div>
+
+                                        <div class="modal-body">
+
+                                            <div class="form-group input__container">
+                                                <label for="predict_name_external">Predict Name</label>
+                                                <input type="text" class="form-control" id="predict_name_external" name="predict_name_external"  placeholder="Enter Predict Name" required>
+                                            </div>
+
+                                            <div class="form-group input__container">
+                                                <label for="select_model" >Model</label></br>
+
+                                                <select class="form-select" id="select_model_external" name="select_model_external" required>
+                                                    <option selected disabled value="">Choose predict file</option>
+                                                    {% for model_obj in model_objs %}
+                                                        <option value="{{ model_obj.model_id }}">{{ model_obj.model_name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div class="invalid-feedback">Please select a valid state.</div>
+
+                                            </div>
+
+                                            <div class="form-group input__container">
+                                                <div class="form-group d-flex">
+                                                    <div class="custom-file my-3">
+                                                        <input type="file" name="upload_file_external" class="custom-file-input" id="upload_file_external"/>
+                                                        <label class="custom-file-label" for="upload_file_external" >Select file</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <ul hidden>
+                                            <input name="model_id_external" id="model_id_external"/>
+                                        </ul>
+
+                                        <div class="modal-footer">
+                                            <input class="btn btn-primary" type="submit" name="create_predict_external" value="Submit" id="create_predict_external">
                                             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                                         </div>
                                     </form>
