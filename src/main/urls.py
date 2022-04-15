@@ -1,12 +1,6 @@
 from django.urls import path
 from main import views
 
-
-
-
-
-
-
 urlpatterns = [
     path('', views.index, name='index'),
     path('experiment', views.experiment, name='experiment'),
@@ -32,6 +26,8 @@ urlpatterns = [
     # path('explain/pdp/class/values', views.explain_pdp_class_values, name='explain_pdp_class_values'),
 
     path('experiment/create/', views.experiment_create, name='experiment_create'),
+    path('experiment/create/<str:pk>', views.experiment_create, name='experiment_create'),
+
     path('experiment/detail/<str:pk>', views.experiment_detail, name='experiment_detail'),
 
     path('file/index/', views.file, name='file'),
@@ -40,4 +36,6 @@ urlpatterns = [
 
     path(r'task/', views.task, name='task'),
     path(r'task/<str:pk>', views.task, name='task_detail'),
+
+    path(r'api/v1/task/', views.task_api, name='task_api'),
 ]

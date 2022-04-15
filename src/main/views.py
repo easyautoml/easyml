@@ -681,7 +681,9 @@ def experiment_detail(request, pk):
         experiment_obj = Experiment.get_experiment_ui(pk)
 
         context = {
-            "experiment_obj": experiment_obj
+            "experiment_obj": experiment_obj,
+            "feature_importance": None,
+            "models_performance": None,
         }
 
         if experiment_obj.task.status == 2:
@@ -728,17 +730,18 @@ def experiment_detail(request, pk):
     return render(request, 'experiment/detail.html', context=context)
 
 
-def experiment_create(request):
+def experiment_create(request, pk=None):
+
     form = {
-        "view_id": int(request.POST.get('view_id', 1)),
-        "file_id": request.POST.get('file_id', None),
+        "view_id": request.POST.get('view_id', 2 if pk is not None else 1),
+        "file_id": request.POST.get('file_id', pk),
         "target_id": int(request.POST.get('target_id', 0)),
         "features_id": request.POST.get('features_id', None),
         "problem_type": request.POST.get('problem_type', None),
         "score": request.POST.get('score', None),
         "split_ratio": request.POST.get('split_ratio', None),
         "experiment_name": request.POST.get('experiment_name', None),
-}
+    }
 
     if request.POST.get('complete'):
         # Run worker task
@@ -793,8 +796,12 @@ def file(request):
     if request.method == 'GET':
         file_objs = File.get_files()
 
+        task_id_list = [file_obj.task.task_id for file_obj in file_objs]
+        task_status_list = [file_obj.task.status for file_obj in file_objs]
         context = {
-            'file_objs': file_objs
+            'file_objs': file_objs,
+            'task_id_list': task_id_list,
+            'task_status_list': task_status_list,
         }
         return render(request, 'file/index.html', context=context)
 
@@ -1045,3 +1052,20 @@ def task(request, pk=None):
         return render(request, 'task/detail.html', context=context)
 
     return JsonResponse({'code': 404, 'description': 'Method not valid'})
+
+
+def task_api(request):
+    """
+    API. Used to get task status.
+    :param request:
+        - task_id : Created when experiment run
+        - status id : 'PENDING': 0, 'STARTED': 1, 'SUCCESS': 2, 'FAILURE': 3, 'RETRY': 4, 'REVOKED': 5
+        - description
+    :return:
+    """
+    if request.method == "GET":
+        task_id = request.GET.get('task_id', None)
+
+        task_obj = Task.objects.get(pk=task_id)
+
+        return JsonResponse({'code': 200, 'description': 'Success', 'result': task_obj.as_json()})

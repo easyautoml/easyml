@@ -2,42 +2,24 @@ $(document).ready(function() {
     $( '#predict_form' ).each(function(){
         this.reset();
     });
+    if (is_ready){
+        draw_chart_feature_importance();
+        draw_chart_performance();
+    }
+});
 
-    draw_chart_performance();
+function delete_confirm(delete_predict_id, delete_predict_name){
+    $("#delete_predict_id").val(delete_predict_id)
+    $("#delete_predict_name").text(delete_predict_name)
+}
 
-//    new Chart(document.getElementById("chart_models"), {
-//        type: 'bubble',
-//        data: {
-//          labels: "Models Performance",
-//          datasets: model_performance_data
-//        },
-//        options: {
-//          title: {
-//            display: false,
-//            text: ''
-//          }, scales: {
-//            yAxes: [{
-//              scaleLabel: {
-//                display: true,
-//                labelString: "Test Score"
-//              }
-//            }],
-//            xAxes: [{
-//              scaleLabel: {
-//                display: true,
-//                labelString: "Evaluation Score"
-//              }
-//            }]
-//          }
-//        }
-//    });
-
+function draw_chart_feature_importance(){
     var FImportanceContext = document.getElementById("chart_feature_importance").getContext("2d");
     var FImportanceData = {
-        labels: feature_importance_label,
+        labels: feature_importance.label,
         datasets: [{
             label: "",
-            data: feature_importance_data,
+            data: feature_importance.data,
             backgroundColor: "#ade8f4",
             hoverBackgroundColor: "#f3722c"
         }]
@@ -63,12 +45,6 @@ $(document).ready(function() {
             },
         }
     });
-
-});
-
-function delete_confirm(delete_predict_id, delete_predict_name){
-    $("#delete_predict_id").val(delete_predict_id)
-    $("#delete_predict_name").text(delete_predict_name)
 }
 
 function draw_chart_performance(){

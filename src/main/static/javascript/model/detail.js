@@ -138,7 +138,7 @@ function draw_feature_importance(){
             text: null
         },
         xAxis: {
-            categories: feature_importance_label,
+            categories: feature_importance.label,
             title: {
                 text: null
             },
@@ -176,7 +176,7 @@ function draw_feature_importance(){
             name: null,
             showInLegend: false,
             color: 'rgba(61, 171, 255, .8)',
-            data: feature_importance_data
+            data: feature_importance.data
         }]
     });
 }

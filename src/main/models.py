@@ -439,6 +439,11 @@ class Task(models.Model):
 
     description = models.CharField(max_length=10000, null=True)
 
+    def as_json(self):
+        return dict(
+            task_id=self.task_id, status=self.status
+        )
+
 
 class BulkCreateManager(object):
     """

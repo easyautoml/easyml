@@ -8,6 +8,14 @@
     var evaluation_ready = false;
     var explain_ready = false;
 
+    {% if evaluation_obj %}
+        get_task_result({{evaluation_obj.task.status}}, '{{evaluation_obj.task.task_id}}');
+    {% endif %}
+
+    {% if sub_population_obj %}
+        get_task_result({{sub_population_obj.task.status}}, '{{sub_population_obj.task.task_id}}');
+    {% endif %}
+
     {% if evaluation_obj != None and evaluation_obj.task.status == 2 %}
         evaluation_ready = true;
         var selected_page = {{ selected_page }};
