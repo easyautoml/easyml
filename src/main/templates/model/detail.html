@@ -21,8 +21,7 @@
         var selected_page = {{ selected_page }};
         var problem_type = "{{ model_obj.experiment.problem_type }}";
 
-        var feature_importance_label = {{ feature_importance.label |safe}};
-        var feature_importance_data = {{ feature_importance.data }};
+        var feature_importance = {{ feature_importance |safe}};
 
         {% if explain_obj != None and explain_obj.task.status == 2 %}
             var pdp_data = {{ pdp_data |safe }}
