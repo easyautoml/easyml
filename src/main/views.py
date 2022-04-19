@@ -694,7 +694,7 @@ def experiment_detail(request, pk):
         )
         predict_obj.save()
 
-        return redirect("main:experiment_detail", pk=pk)
+        return redirect("experiment_detail", pk=pk)
 
     # Processing delete predict
     if request.POST.get("delete_predict"):

@@ -51,7 +51,7 @@ def get_predict_url(predict_id):
     #return "{}{}.xlsx".format(PREDICT_BASE_DIR, predict_id)
     path = Path(PREDICT_BASE_DIR)
     path.mkdir(parents=True, exist_ok=True)
-    return path.joinpath(f"{predict_id}.xlsx") "{}{}.xlsx".format(PREDICT_BASE_DIR, predict_id)
+    return path.joinpath(f"{predict_id}.xlsx")
 
 
 def get_file_eda_url(file_id):
