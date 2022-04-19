@@ -7,6 +7,8 @@ import string
 from sklearn.neighbors import KernelDensity
 from numerize.numerize import numerize
 import math
+from pathlib import Path
+
 
 
 FILE_BASE_DIR = "static/file_upload/"
@@ -17,28 +19,46 @@ EDA_FILE_BASE_DIR = "main/templates/file/eda/"
 
 
 def get_file_url(file_id):
-    return "{}{}".format(FILE_BASE_DIR, file_id)
+    #return "{}{}".format(FILE_BASE_DIR, file_id)
+    path = Path(FILE_BASE_DIR)
+    path.mkdir(parents=True, exist_ok=True)
+    return path.joinpath(str(file_id))return "{}{}".format(FILE_BASE_DIR, file_id)
 
 
 def get_experiments_url(experiment_id):
-    return "{}{}".format(EXPERIMENTS_BASE_DIR, experiment_id)
+    #return "{}{}".format(EXPERIMENTS_BASE_DIR, experiment_id)
+    path = Path(EXPERIMENTS_BASE_DIR)
+    path.mkdir(parents=True, exist_ok=True)
+    return path.joinpath(str(experiment_id))
 
 
 def get_evaluation_url(evaluation_id):
-    return "{}{}.xlsx".format(EVALUATION_BASE_DIR, evaluation_id)
+    #return "{}{}.xlsx".format(EVALUATION_BASE_DIR, evaluation_id)
+    path = Path(EVALUATION_BASE_DIR)
+    path.mkdir(parents=True, exist_ok=True)
+    return path.joinpath(str(evaluation_id))
 
 
 def get_experiments_dataset_url(experiment_id, file_name):
     root = get_experiments_url(experiment_id)
-    return "{}{}{}".format(root, "/utils/data/", file_name)
+    #return "{}{}{}".format(root, "/utils/data/", file_name)
+    path = Path(root, "utils/data/")
+    path.mkdir(parents=True, exist_ok=True)
+    return path.joinpath(str(file_name))
 
 
 def get_predict_url(predict_id):
-    return "{}{}.xlsx".format(PREDICT_BASE_DIR, predict_id)
+    #return "{}{}.xlsx".format(PREDICT_BASE_DIR, predict_id)
+    path = Path(PREDICT_BASE_DIR)
+    path.mkdir(parents=True, exist_ok=True)
+    return path.joinpath(f"{predict_id}.xlsx") "{}{}.xlsx".format(PREDICT_BASE_DIR, predict_id)
 
 
 def get_file_eda_url(file_id):
-    return "{}{}.html".format(EDA_FILE_BASE_DIR, file_id)
+    #return "{}{}.html".format(EDA_FILE_BASE_DIR, file_id)
+    path = Path(EDA_FILE_BASE_DIR)
+    path.mkdir(parents=True, exist_ok=True)
+    return path.joinpath(f"{file_id}.html")
 
 
 def distribution_density(x, density_num):
