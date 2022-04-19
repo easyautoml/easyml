@@ -22,7 +22,7 @@ def get_file_url(file_id):
     #return "{}{}".format(FILE_BASE_DIR, file_id)
     path = Path(FILE_BASE_DIR)
     path.mkdir(parents=True, exist_ok=True)
-    return path.joinpath(str(file_id))return "{}{}".format(FILE_BASE_DIR, file_id)
+    return path.joinpath(str(file_id))
 
 
 def get_experiments_url(experiment_id):
