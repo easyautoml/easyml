@@ -1,7 +1,7 @@
 function get_task_result(last_status, task_id){
 
     console.log(task_id)
-    const task_url = "http://localhost:8000/api/v1/task/?task_id="+task_id;
+    const task_url = window.location.origin + "/api/v1/task/?task_id="+task_id;
 
     fetch(task_url , {
         method: "GET",
