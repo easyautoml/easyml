@@ -113,6 +113,8 @@ class File(models.Model):
     file_path = models.CharField(max_length=200, null=True)
 
     is_delete = models.BooleanField(null=True)
+    
+    is_external = models.BooleanField(null=True, default=False)
 
     create_datetime = models.DateTimeField(auto_now_add=True, null=True)
 
