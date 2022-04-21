@@ -8,13 +8,20 @@
     var evaluation_ready = false;
     var explain_ready = false;
 
+    {% if evaluation_obj %}
+        get_task_result({{evaluation_obj.task.status}}, '{{evaluation_obj.task.task_id}}');
+    {% endif %}
+
+    {% if sub_population_obj %}
+        get_task_result({{sub_population_obj.task.status}}, '{{sub_population_obj.task.task_id}}');
+    {% endif %}
+
     {% if evaluation_obj != None and evaluation_obj.task.status == 2 %}
         evaluation_ready = true;
         var selected_page = {{ selected_page }};
         var problem_type = "{{ model_obj.experiment.problem_type }}";
 
-        var feature_importance_label = {{ feature_importance.label |safe}};
-        var feature_importance_data = {{ feature_importance.data }};
+        var feature_importance = {{ feature_importance |safe}};
 
         {% if explain_obj != None and explain_obj.task.status == 2 %}
             var pdp_data = {{ pdp_data |safe }}

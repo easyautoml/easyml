@@ -113,6 +113,8 @@ class File(models.Model):
     file_path = models.CharField(max_length=200, null=True)
 
     is_delete = models.BooleanField(null=True)
+    
+    is_external = models.BooleanField(null=True, default=False)
 
     create_datetime = models.DateTimeField(auto_now_add=True, null=True)
 
@@ -438,6 +440,11 @@ class Task(models.Model):
     finish_datetime = models.DateTimeField(null=True)
 
     description = models.CharField(max_length=10000, null=True)
+
+    def as_json(self):
+        return dict(
+            task_id=self.task_id, status=self.status
+        )
 
 
 class BulkCreateManager(object):

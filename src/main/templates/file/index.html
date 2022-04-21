@@ -4,79 +4,76 @@
 
 {% block content %}
 <script>
-$(document).ready(function(){
-    $('#upload_file').on('change',function(){
-        //get the file name
-        var fileName = $(this).val().replace("C:\\fakepath\\", "");
+    var task_id_list = {{ task_id_list |safe}};
+    var task_status_list = {{ task_status_list |safe}};
 
-        //replace the "Choose a file" label
-        $(this).next('.custom-file-label').html(fileName);
-    });
-});
+    {% for file_obj in file_objs %}
+        get_task_result({{file_obj.task.status|safe}}, '{{file_obj.task.task_id|safe}}');
+        {% if file_obj.file_eda %}
+            get_task_result({{file_obj.file_eda.task.status|safe}}, '{{file_obj.file_eda.task.task_id|safe}}');
+        {% endif %}
+    {% endfor %}
 </script>
 
 <div class="container">
+    <div class="header">
+        <h1>Datasource Management</h1><br><br>
 
-    <div class="row py-2">
-        <div class="col mx-auto">
-          <div class="shadow border-0">
-            <div class="card-body bg-white rounded">
-              <div class="card-body">
-                  <h1>Datasource Management</h1>
-                  <br><br>
-                  {% if messages %}
-                  <div class="alert alert-danger alert-dismissible">
-                     <button type="button" class="close" data-dismiss="alert">&times;</button>
-                     {% for mes in messages %}
-                        <strong>{{ mes }}</strong>
-                     {% endfor %}
-                  </div>
-                  {% endif %}
-                  <form action="" method="post" enctype="multipart/form-data">{% csrf_token %}
-                    <div class="row">
-                        <div class="col-sm-8">
-                            <!--Model ID-->
-                            <div class="form-group d-flex">
-                                <div class="custom-file mb-3">
-                                    <input type="file" name="upload_file" class="custom-file-input" id="upload_file"/>
-                                    <label class="custom-file-label" for="upload_file" >Select file</label>
-                                </div>
-                            </div>
+        {% if messages %}
+        <div class="alert alert-danger alert-dismissible">
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            {% for mes in messages %}
+                <strong>{{ mes }}</strong>
+            {% endfor %}
+        </div>
+        {% endif %}
 
-                        </div>
-
-                        <div class="col-sm">
-                            <input class="btn btn-outline-success" type="submit" name ="complete" class="submit_btn btn label-success" value="  Upload  " />
+        <form action="" method="post" enctype="multipart/form-data">{% csrf_token %}
+            <div class="row">
+                <div class="col-sm-8">
+                <!--Model ID-->
+                    <div class="form-group d-flex">
+                        <div class="custom-file mb-3">
+                            <input type="file" name="upload_file" class="custom-file-input" id="upload_file"/>
+                            <label class="custom-file-label" for="upload_file" >Select file</label>
                         </div>
                     </div>
 
-                </form>
-                <hr style="margin-top: 1rem; margin-bottom: 0rem; border: 1; border-top: 1px solid rgba(0, 0, 0, 0.1);"/>
-              </div>
+                </div>
 
-              <div class="card-body table-responsive">
-                <table id="data_source_lst" style="width:100%" class="table table-striped table-bordered">
-                  <thead>
-                    <tr>
-                      <th>File Name</th>
-                      <th>Upload Date</th>
-                      <th>Status</th>
-                      <th>EDA</th>
-                      <th></th>
+                <div class="col-sm">
+                    <input class="btn btn-outline-success" type="submit" name ="complete" class="submit_btn btn label-success" value="  Upload  " />
+                </div>
+            </div>
 
-                    </tr>
-                  </thead>
-                  <tbody>
-                  {% for file_obj in file_objs %}
-                    <tr>
-                      <td>{{ file_obj.file_name }}</td>
-                      <td>{{ file_obj.create_datetime }}</td>
+        </form>
 
-                      <td>
+    </div>
+
+    <div class="card-body shadow border-0">
+        <table id="data_source_lst" style="width:100%" class="table table-striped table-bordered">
+            <thead>
+                <tr>
+                    <th>File Name</th>
+                    <th>Upload Date</th>
+                    <th>Status</th>
+                    <th>EDA</th>
+                    <th>Build Experiment</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file_obj in file_objs %}
+                <tr>
+                    <td>{{ file_obj.file_name }}</td>
+                    <td>{{ file_obj.create_datetime }}</td>
+
+                    <!-- FILE STATUS -->
+                    <td>
                         {% ifequal  file_obj.task.status  0 %}
-                            <div class="spinner-grow" role="status">
-                              <span class="sr-only">Loading...</span>
-                            </div>
+                        <div class="spinner-grow" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
                         {%　endifequal %}
 
                         {% ifequal  file_obj.task.status  1 %}
@@ -90,48 +87,45 @@ $(document).ready(function(){
                         {% ifequal  file_obj.task.status  3 %}
                             <ion-icon name="alert-circle-outline"></ion-icon>
                         {%　endifequal %}
+                    </td>
 
-                      </td>
+                    <!-- EDA Button -->
                     <td>
                         <form method="POST" action=""> {% csrf_token %}
-                            {% if file_obj.file_eda %}
-                                {% if file_obj.file_eda.task.status == 2 %}
-                                    <a href="{% url 'file_eda' file_obj.file_id %}"  target="_blank"><button type="button" class="btn btn-outline-success btn-sm">Open EDA</button></a>
+                        {% if file_obj.file_eda %}
+                            {% if file_obj.file_eda.task.status == 2 %}
+                                <a href="{% url 'file_eda' file_obj.file_id %}"  target="_blank"><button type="button" class="btn btn-success btn-sm">Open EDA</button></a>
 
-
-                                {% elif file_obj.file_eda.task.status == 1 %}
-                                    <div class="spinner-grow" role="status"><span class="sr-only">Loading...</span></div>
-
-                                {% elif file_obj.file_eda.task.status == 0 %}
-                                    Pending
-
-                                {% elif file_obj.file_eda.task.status == 3 %}
-                                    <a role="button" href="{% url 'task_detail' file_obj.file_eda.task.task_id %}">
-                                        <button type="button" class="btn btn-outline-danger">Fail</button>
-                                    </a>
-                                {% endif %}
-                            {% elif file_obj.task.status == 2 %}
-                                <button type="submit" class="btn btn-outline-success btn-sm" name="create_file_eda" value="{{ file_obj.file_id }}">
-                                    Create EDA
-                                </button>
+                            {% elif file_obj.file_eda.task.status == 1 %}
+                                <div class="spinner-grow" role="status"><span class="sr-only">Loading...</span></div>
+                            {% elif file_obj.file_eda.task.status == 0 %}
+                                Pending
+                            {% elif file_obj.file_eda.task.status == 3 %}
+                                <a role="button" href="{% url 'task_detail' file_obj.file_eda.task.task_id %}">
+                                    <button type="button" class="btn btn-outline-danger">Fail</button>
+                                </a>
                             {% endif %}
-                          </form>
-                    </td>
-                      <td>
-                         <button class="btn btn-outline-danger" data-toggle="modal"
-                                 data-target="#delete_confirm" onclick="delete_confirm('{{ file_obj.file_id }}', '{{ file_obj.file_name }}')">
-                             <ion-icon name="trash-outline"/>
-                         </button>
-                     </td>
-                    </tr>
-                    {% endfor %}
 
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        </div>
+                        {% elif file_obj.task.status == 2 %}
+                            <button type="submit" class="btn btn-outline-success btn-sm" name="create_file_eda" value="{{ file_obj.file_id }}"><ion-icon name="stats-chart-outline"></ion-icon></button>
+                        {% endif %}
+                        </form>
+                    </td>
+
+                    <!-- CREATE EXP BTN-->
+                    <td>
+                        <a class="btn btn-outline-success btn-sm" href="{% url 'experiment_create' file_obj.file_id %}"  target="_blank">Build Experiment</a>
+                    </td>
+
+                    <!-- DELETE BUTTON -->
+                    <td>
+                        <button class="btn btn-outline-danger btn-sm" data-toggle="modal" data-target="#delete_confirm" onclick="delete_confirm('{{ file_obj.file_id }}', '{{ file_obj.file_name }}')"><ion-icon name="trash-outline"/></button>
+                    </td>
+                </tr>
+                {% endfor %}
+
+            </tbody>
+        </table>
     </div>
 </div>
 

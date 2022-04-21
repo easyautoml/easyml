@@ -5,9 +5,23 @@
 {% block content %}
 
 <script type="text/javascript">
-    var feature_importance_label = {{ feature_importance.label |safe}};
-    var feature_importance_data = {{ feature_importance.data }};
-    var models_performance = {{ models_performance |safe}};
+    <!-- Auto Reload for experiment   -->
+    get_task_result({{experiment_obj.task.status}}, '{{experiment_obj.task.task_id}}');
+
+    <!-- Auto Reload for Predict   -->
+    {% for predict_obj in predict_objs %}
+        get_task_result({{predict_obj.task.status}}, '{{predict_obj.task.task_id}}');
+    {% endfor %}
+
+    var task_status = {{ experiment_obj.task.status }}
+    var is_ready = false;
+    if (task_status == 2){
+        var is_ready = true;
+
+        var feature_importance = {{ feature_importance |safe}};
+        var models_performance = {{ models_performance |safe}};
+   }
+
 </script>
 
 <header>
