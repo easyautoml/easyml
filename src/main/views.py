@@ -666,6 +666,7 @@ def experiment_detail(request, pk):
         # Save file info
         file_obj = File(
                 file_id=file_id, file_name='{}'.format(upload_file),
+                is_external=True,
                 file_path=file_path, is_delete=False, task=task_obj
             )
         file_obj.save()
@@ -743,7 +744,7 @@ def experiment_detail(request, pk):
 
             predict_objs = Predict.get_predict(pk)
 
-            file_objs = File.get_success_files()
+            file_objs = File.get_success_files().filter(is_external=False)
 
             best_model_obj = Model.objects.get(pk=experiment_obj.best_model_id)
 
@@ -825,7 +826,7 @@ def experiment_create(request):
 
         return redirect("experiment_detail", pk=experiment_id)
 
-    file_objs = File.get_files()
+    file_objs = File.get_files().filter(is_external=False)
 
     f_metadata_objs = None
     if form.get("file_id") is not None:
@@ -844,7 +845,7 @@ def experiment_create(request):
 def file(request):
 
     if request.method == 'GET':
-        file_objs = File.get_files()
+        file_objs = File.get_files().filter(is_external=False)
 
         context = {
             'file_objs': file_objs
