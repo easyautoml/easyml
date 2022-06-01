@@ -2,9 +2,20 @@ $(document).ready(function() {
     $( '#predict_form' ).each(function(){
         this.reset();
     });
+
+    $('#upload_file').on('change',function(){
+        //get the file name
+        var fileName = $(this).val().replace("C:\\fakepath\\", "");
+
+        //replace the "Choose a file" label
+        $(this).next('.custom-file-label').html(fileName);
+    });
+
     if (is_ready){
         draw_chart_feature_importance();
         draw_chart_performance();
+
+        predict_selected_source();
     }
 });
 
@@ -128,4 +139,17 @@ function draw_chart_performance(){
             color: 'rgba(173, 232, 244, 0.3)',
         }]
     });
+}
+
+function predict_selected_source(){
+    var is_internal_selected = $("#radio_internal").is(":checked");
+
+    if (is_internal_selected) {
+        $("#select_internal_form").show();
+        $("#select_external_form").hide();
+    }
+    else{
+        $("#select_internal_form").hide();
+        $("#select_external_form").show();
+    }
 }
