@@ -242,6 +242,7 @@
                                     <th scope="col">Predict Name</th>
                                     <th scope="col">Models</th>
                                     <th scope="col">Create Date</th>
+                                    <th scope="col">Predict File Name</th>
                                     <th scope="col">Status</th>
                                     <th scope="col">Download</th>
                                     <th></th>
@@ -253,6 +254,7 @@
                                         <td>{{ predict_obj.predict_name }}</td>
                                         <td>{{ predict_obj.model.model_name }}</td>
                                         <td>{{ predict_obj.create_datetime }}</td>
+                                        <td>{{ predict_obj.file.file_name }}</td>
                                         <td><a role="button" href="{% url 'task_detail' predict_obj.task.task_id %}">
                                             {% if predict_obj.task.status  == 0 %}
                                                 PENDING
