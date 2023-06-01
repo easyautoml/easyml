@@ -3,24 +3,18 @@
 
 ## 1. Introduce EasyML
 
-EasyML is an Auto Machine Learning web based that help you build Model without any coding. 
+EasyML is a web-based Auto Machine Learning platform designed to facilitate model development without the need for coding expertise. By simply uploading your data and configuring your experiment, including selecting the target, features, and scoring metrics, EasyML will generate over 10 models along with their corresponding evaluation scores.
 
-All you need todo is upload your data, design your experiment like select target, features, score and submit.
-EasyML will help you generate more than 10 models with evaluation score.
-
-*Check bellow video to learn more detail about EasyML system:*
+*For a more detailed understanding of the EasyML system, we encourage you to watch the video below.*
 
 [![img.png](docs/img/img.png)](https://www.youtube.com/watch?v=jRtNJl3y2as&t)
-
-**There are alot of features need to be added, so it would be great if you can join with me**
 
 Feel free to reach out to me on LinkedIn (http://www.linkedin.com/in/lucnguyenvn) if you would like to discuss further, it would be a pleasure (honestly).
 
 ## 2. How to use EasyML
 
 ### 2.1 Upload Data and analysis your data
-After build the model, you need upload data by click on **File Management** button.
-System now only accept csv file. I will upgrade soon that help customer can upload other file like excel, text.
+Once the model has been built, you can proceed to upload your data by clicking on the File Management button. Currently, the system only supports CSV files, but I am actively working on an upgrade to allow customers to upload other file formats such as Excel and text files. This enhancement will be available in the near future to provide a more versatile data upload capability for our users.
 
 ![img_1.png](docs/img/img_1.png)
 
