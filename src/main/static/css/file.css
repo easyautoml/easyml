@@ -2,3 +2,20 @@ body {
   min-height: 100vh;
 
 }
+
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+ .table-list {
+    max-height: 200px; /* Adjust the height as needed */
+    overflow-y: auto;
+}
+/* Style for the Import button */
+.import-button {
+    float: right;
+}

@@ -9,7 +9,7 @@ function get_task_result(last_status, task_id){
     })
     .then(response => response.json())
     .then(data => {
-        console.log("Checked, task status is", data.result.status);
+//        console.log("Checked, task status is", data.result.status);
         if (last_status != data.result.status){
             window.location.reload();
         }

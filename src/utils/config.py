@@ -21,6 +21,8 @@ TARGET_PATH = {
     "explain_pdp_regress": 'explain/pdp/regress',
     "explain_pdp_class": 'explain/pdp/class',
     "explain_pdp_class_values": 'explain/pdp/class/values',
+
+    "deploy": 'deploy',
 }
 
 TASK_STATUS = {
@@ -65,3 +67,5 @@ HYPER_PARAMETER = {
         {'weights': 'distance', 'ag_args': {'name_suffix': 'Dist'}},
     ],
 }
+
+SECRET_KEY_FOR_ENCRYPTION = b'SgjUcQ8bLkQ85oFj_CPuPgSaeZwT3Rw92dM8xKmutMc='

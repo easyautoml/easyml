@@ -19,9 +19,12 @@ $(document).ready(function() {
     }
 });
 
-function delete_confirm(delete_predict_id, delete_predict_name){
-    $("#delete_predict_id").val(delete_predict_id)
-    $("#delete_predict_name").text(delete_predict_name)
+function delete_confirm(delete_id, delete_name, delete_object_name){
+    $("#delete_id").val(delete_id)
+    $("#delete_name").text(delete_name)
+
+    $("#btn_submit_delete").attr("name", delete_object_name)
+    $("#btn_submit_delete").attr("value", delete_object_name)
 }
 
 function draw_chart_feature_importance(){

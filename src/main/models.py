@@ -1,6 +1,10 @@
 from django.db import models
 from django.apps import apps
+from django.conf import settings
 from collections import defaultdict
+from cryptography.fernet import Fernet
+import teradatasql
+import base64
 
 
 SCORE = {
@@ -67,7 +71,7 @@ class Experiment(models.Model):
 
     @staticmethod
     def get_experiments():
-        return Experiment.objects.filter(is_delete__exact=False).order_by('-create_datetime').reverse()
+        return Experiment.objects.filter(is_delete__exact=False).order_by('-create_datetime')
 
     @staticmethod
     def get_experiment_api(experiment_id):
@@ -132,11 +136,11 @@ class File(models.Model):
 
     @staticmethod
     def get_files():
-        return File.objects.filter(is_delete__exact=False).order_by('-create_datetime').reverse()
+        return File.objects.filter(is_delete__exact=False).order_by('-create_datetime')
 
     @staticmethod
     def get_success_files():
-        return File.objects.filter(is_delete__exact=False).filter(task__status__exact=2).order_by('-create_datetime').reverse()
+        return File.objects.filter(is_delete__exact=False).filter(task__status__exact=2).order_by('-create_datetime')
 
 
 class FileEda(models.Model):
@@ -581,3 +585,189 @@ class ExplainPdpClassValues(models.Model):
     )
 
     pdp_values = models.JSONField(null=True)
+
+
+class Connection(models.Model):
+    connection_id = models.AutoField(
+        primary_key=True
+    )
+
+    connection_name = models.CharField(
+        max_length=100
+    )
+
+    database = models.CharField(
+        max_length=100
+    )
+
+    host = models.CharField(
+        max_length=500
+    )
+
+    user_name = models.CharField(
+        max_length=200
+    )
+
+    password = models.BinaryField()
+
+    is_delete = models.BooleanField(null=True)
+
+    create_datetime = models.DateTimeField(auto_now_add=True, null=True)
+
+    @staticmethod
+    def encrypt_password(password):
+        secret_key = settings.SECRET_KEY_FOR_ENCRYPTION
+        cipher_suite = Fernet(secret_key)
+        encrypted_password = cipher_suite.encrypt(str(password).encode("utf-8"))
+
+        return encrypted_password
+
+    def decrypt_password(self):
+        secret_key = settings.SECRET_KEY_FOR_ENCRYPTION
+        cipher_suite = Fernet(secret_key)
+        decrypted_password = cipher_suite.decrypt(self.password.tobytes())
+        return decrypted_password.decode()
+
+    @staticmethod
+    def get_connections():
+        connection_objs = Connection.objects.filter(is_delete__exact=False)
+
+        _connection_objs = []
+        for connection_obj in connection_objs:
+            connection_obj.password = connection_obj.decrypt_password()
+
+            _connection_objs.append(connection_obj)
+
+        return _connection_objs
+
+    @staticmethod
+    def get_connection(connection_id, decrypt_password=True):
+        try:
+            connection_obj = Connection.objects.get(pk=connection_id)
+            if decrypt_password:
+                connection_obj.password = connection_obj.decrypt_password()
+            else:
+                # Convert password into string
+                connection_obj.password = base64.b64encode(connection_obj.password).decode('utf-8')
+        except Experiment.DoesNotExist:
+            return {'code': 404, 'description': 'Experiment id does not exist'}
+
+        return connection_obj
+
+    def get_tables_from_db(self):
+
+        try:
+            connection = teradatasql.connect(
+                host=self.host,
+                user=self.user_name,
+                password=self.password
+            )
+
+            cursor = connection.cursor()
+
+            # Execute a SQL query to retrieve table names
+            sql_query = "SELECT TableName FROM DBC.TablesV WHERE DatabaseName = '{}';".format(self.database)
+            cursor.execute(sql_query)
+
+            # Fetch and print the table names
+            table_names = [row[0] for row in cursor.fetchall()]
+
+            cursor.close()
+            connection.close()
+
+            return {
+                'code': 200, 'result': {
+                    "table_names": table_names
+                }
+
+            }
+        except Exception as e:
+            return {'code': 405, 'description': "Can't connect to DB, {}".format(e)}
+
+    def as_json(self):
+        return dict(
+            host_name=self.host, username=self.user_name,
+            password=self.decrypt_password(),  # TODO: Not decrypt at here
+            database=self.database
+        )
+
+
+class Deployment(models.Model):
+    deploy_id = models.CharField(
+        primary_key=True,
+        null=False,
+        max_length=300
+    )
+
+    deploy_name = models.CharField(
+        max_length=100
+    )
+
+    model = models.ForeignKey(
+        'Model',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    teradata_model_id = models.CharField(
+        max_length=100,
+        null=True,
+    )
+
+    task = models.ForeignKey(
+        'Task',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    experiment_id = models.CharField(max_length=200, null=True)
+
+    connection = models.ForeignKey(
+        'Connection',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    create_datetime = models.DateTimeField(auto_now_add=True, null=True)
+
+    is_delete = models.BooleanField(null=True, default=False)
+
+    output_table = models.CharField(
+        max_length=100
+    )
+
+    sql_preprocess = models.CharField(
+        max_length=10000
+    )
+
+    sql_prediction = models.CharField(
+        max_length=10000
+    )
+
+    @staticmethod
+    def get_deployments(experiment_id):
+        deployment_objs = Deployment.objects.filter(experiment_id=experiment_id).filter(is_delete__exact=False).\
+            order_by('-create_datetime')
+        return deployment_objs
+
+    def as_json(self):
+        return dict(
+            deploy_id=self.deploy_id, deploy_name=self.deploy_name, output_table=self.output_table,
+            experiment_id=self.model.experiment.experiment_id,
+            model_name=self.model.model_name,
+            teradata_model_id=self.teradata_model_id
+        )
+
+    @staticmethod
+    def get_deploy_api(deploy_id):
+        try:
+            deploy_obj = Deployment.objects.get(pk=deploy_id)
+        except Explain.DoesNotExist:
+            return {'code': 404, 'description': 'Experiment id does not exist'}
+
+        deploy_info = {
+            "deploy_info": deploy_obj.as_json(),
+            "connection_info": deploy_obj.connection.as_json(),
+        }
+
+        return {'code': 200, 'description': 'Success', 'result': deploy_info}

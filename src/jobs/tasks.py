@@ -1,7 +1,7 @@
 from celery.decorators import task
-from utils.transform import Input, Output, get_file_eda_url, get_file_url
+from utils.transform import Input, Output, get_file_eda_url, get_file_url, decrypt_password
 from utils import config, services
-from jobs.automl import Train, Predict, Evaluation, Explain
+from jobs.automl import Train, Predict, Evaluation, Explain, Deployment
 from pandas_profiling import ProfileReport
 
 
@@ -25,6 +25,62 @@ def upload_file_task(self, file_id):
         file_url = get_file_url(file_id)
 
         df_file = Input(file_url).from_csv()
+
+        # Create metadata
+        file_metadata_dict = df_file.dtypes.apply(lambda x: str(x)).to_dict()
+
+        # Post metadata into server
+        _data = {
+            "file_id": file_id,
+            "file_metadata_dict": file_metadata_dict
+        }
+        services.post(data=_data, target_path=config.TARGET_PATH.get("file_metadata"))
+
+        # # Post data into server
+        _data = {
+            "task_id": task_id,
+            "status": config.TASK_STATUS.get('SUCCESS'),
+        }
+
+        services.post(data=_data, target_path=config.TARGET_PATH.get("task"))
+
+    except Exception as e:
+        mes = "Upload file failure. Error {}".format(e)
+        _data = {
+            "task_id": task_id,
+            "status": config.TASK_STATUS.get('FAILURE'),
+            "description": mes[:300]
+        }
+
+        services.post(data=_data, target_path=config.TARGET_PATH.get("task"))
+        raise Exception(mes[:300])
+
+
+@task(name="ingest_file_from_db", bind=True)
+def ingest_file_from_db_task(self, file_id, hostname, username, password, database, table):
+    task_id = self.request.id
+
+    _data = {
+        "task_id": task_id,
+        "status": config.TASK_STATUS.get('STARTED'),
+    }
+
+    services.post(data=_data, target_path=config.TARGET_PATH.get("task"))
+
+    password = decrypt_password(password)
+
+    try:
+        df_file = Input(file_url=None).from_teradata(
+            hostname=hostname,
+            username=username,
+            password=password,
+            database=database,
+            table=table
+        )
+
+        # Write file into local
+        file_url = get_file_url(file_id)
+        df_file.to_csv(file_url, index=False)
 
         # Create metadata
         file_metadata_dict = df_file.dtypes.apply(lambda x: str(x)).to_dict()
@@ -255,6 +311,40 @@ def explain_task(self, explain_id):
 
     except Exception as e:
         mes = "Create explain failure. Error {}".format(e)
+        _data = {
+            "task_id": task_id,
+            "status": config.TASK_STATUS.get('FAILURE'),
+            "description": mes[:300]
+        }
+
+        services.post(data=_data, target_path=config.TARGET_PATH.get("task"))
+
+        raise Exception(mes[:300])
+
+
+@task(name="deploy_task", bind=True)
+def deploy_task(self, deploy_id):
+    task_id = self.request.id
+
+    _data = {
+        "task_id": task_id,
+        "status": config.TASK_STATUS.get('STARTED'),
+    }
+    services.post(data=_data, target_path=config.TARGET_PATH.get("task"))
+
+    try:
+        deployment = Deployment(deploy_id)
+        deployment.deploy()
+
+        _data = {
+            "task_id": task_id,
+            "status": config.TASK_STATUS.get('SUCCESS'),
+        }
+
+        services.post(data=_data, target_path=config.TARGET_PATH.get("task"))
+
+    except Exception as e:
+        mes = "Create deploy task failure. Error {}".format(e)
         _data = {
             "task_id": task_id,
             "status": config.TASK_STATUS.get('FAILURE'),

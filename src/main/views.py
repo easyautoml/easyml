@@ -3,7 +3,8 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Experiment, Predict, Model, Task, File, BulkCreateManager, FileMetadata, FileEda, Evaluation, \
     SCORE, EvaluationClassRocLift, EvaluationClass, EvaluationClassDistribution, EvaluationPredictActual, \
-    EvaluationSubPopulation, Explain, ExplainPdp, ExplainPdpRegress, ExplainPdpClass, ExplainPdpClassValues
+    EvaluationSubPopulation, Explain, ExplainPdp, ExplainPdpRegress, ExplainPdpClass, ExplainPdpClassValues, \
+    Connection, Deployment
 from django.db.models import Max
 from django.core.files.storage import default_storage
 from django.urls import reverse
@@ -11,7 +12,7 @@ from django.http import HttpResponseRedirect
 import uuid
 from django.views.decorators.csrf import csrf_exempt
 from jobs.tasks import upload_file_task, create_file_eda_task, create_experiment_task, predict_task, evaluation_task, \
-    evaluation_sub_population_task, explain_task
+    evaluation_sub_population_task, explain_task, ingest_file_from_db_task, deploy_task
 from utils.transform import get_file_url, get_predict_url, Input, get_file_eda_url, get_evaluation_url
 from utils import config
 import json
@@ -677,11 +678,21 @@ def experiment_detail(request, pk):
 
     # Processing delete predict
     if request.POST.get("delete_predict"):
-        predict_id = request.POST.get("delete_predict_id")
+        predict_id = request.POST.get("delete_id")
 
         predict_obj = Predict.objects.get(pk=predict_id)
         predict_obj.is_delete = True
         predict_obj.save()
+
+        return redirect("experiment_detail", pk=pk)
+
+    if request.POST.get("delete_deployment"):
+
+        deployment_id = request.POST.get("delete_id")
+
+        deployment_obj = Deployment.objects.get(pk=deployment_id)
+        deployment_obj.is_delete = True
+        deployment_obj.save()
 
         return redirect("experiment_detail", pk=pk)
 
@@ -707,6 +718,49 @@ def experiment_detail(request, pk):
         except Exception as e:
             mes = '<h1>Can not open excel file at local.  </h1>. ERROR : {}'.format(e)
             return HttpResponse(mes)
+
+    # Processing deploy
+    if request.POST.get("create_deploy"):
+        model_id = request.POST.get("deploy_model")
+        connection_id = request.POST.get("deploy_connection")
+        output_table = request.POST.get("output_table")
+        deploy_name = request.POST.get("deploy_name")
+
+        try:
+            model_obj = Model.objects.get(pk=model_id)
+            connection_obj = Connection.objects.get(pk=connection_id)
+        except Exception as e:
+            mes = '<h1>Not found predict id.  </h1>. ERROR : {}'.format(e)
+            return HttpResponse(mes)
+
+        deploy_id = str(uuid.uuid1())
+
+        # Load predict file
+        task_id = deploy_task.delay(deploy_id)
+
+        task_obj = Task(
+            task_id=task_id,
+            status=config.TASK_STATUS.get('PENDING')
+        )
+        task_obj.save()
+
+        _current_time = datetime.now().strftime('%Y%m%d_%H%M')
+        teradata_model_id = "{}_{}".format(_current_time, model_obj.model_name)
+
+        deploy_obj = Deployment(
+            deploy_id=deploy_id,
+            deploy_name=deploy_name,
+            output_table=output_table,
+            model=model_obj,
+            task=task_obj,
+            experiment_id=pk,
+            teradata_model_id=teradata_model_id,
+            connection=connection_obj
+        )
+
+        deploy_obj.save()
+
+        return redirect("experiment_detail", pk=pk)
 
     # MAIN.
     if request.method == "GET":
@@ -749,6 +803,10 @@ def experiment_detail(request, pk):
 
                 models_performance.append(_data)
 
+            # Add infor
+            connection_objs = Connection.get_connections()
+            deployment_objs = Deployment.get_deployments(pk)
+
             context = {
                 "experiment_obj": experiment_obj,
                 "model_objs": model_objs,
@@ -756,10 +814,49 @@ def experiment_detail(request, pk):
                 "file_objs": file_objs,
                 "best_model_obj": best_model_obj,
                 "feature_importance": feature_importance,
-                "models_performance": models_performance
+                "models_performance": models_performance,
+                "connection_objs": connection_objs,
+                "deployment_objs": deployment_objs
             }
 
     return render(request, 'experiment/detail.html', context=context)
+
+
+@csrf_exempt
+def deploy(request):
+    """
+    API. Used to get explain info.
+    :param request:
+    :return:
+    """
+    if request.method == "GET":
+
+
+        deploy_id = request.GET.get('deploy_id', None)
+
+        deploy_info = Deployment.get_deploy_api(deploy_id)
+
+        return JsonResponse(deploy_info)
+
+    if request.method == "POST":
+
+        body_unicode = request.body.decode('utf-8')
+        agrs = json.loads(body_unicode)
+
+        deploy_id = agrs.get('deploy_id', None)
+        if deploy_id is None:
+            return JsonResponse({'code': 404, 'description': 'Task id must be not none'})
+
+        try:
+            deploy_obj = Deployment.objects.get(pk=deploy_id)
+            deploy_obj.sql_preprocess = agrs.get('sql_preprocess')
+            deploy_obj.sql_prediction = agrs.get('sql_prediction')
+            deploy_obj.save()
+
+        except Deployment.DoesNotExist:
+            return JsonResponse({'code': 405, 'description': 'Deployment id not found'})
+
+        return JsonResponse({'code': 200, 'description': 'Success'})
 
 
 def experiment_create(request, pk=None):
@@ -824,20 +921,28 @@ def experiment_create(request, pk=None):
 
 @csrf_exempt
 def file(request):
+    file_objs = File.get_files().filter(is_external=False)
+
+    connection_objs = Connection.get_connections()
+
+    task_id_list = [file_obj.task.task_id for file_obj in file_objs]
+
+    task_status_list = [file_obj.task.status for file_obj in file_objs]
+
+    context = {
+        'file_objs': file_objs,
+        'connection_objs': connection_objs,
+        'selected_connection_obj': connection_objs[0] if len(connection_objs) > 0 else None,
+        'task_id_list': task_id_list,
+        'task_status_list': task_status_list,
+        'selected_tab': "files-tab",
+    }
 
     if request.method == 'GET':
-        file_objs = File.get_files().filter(is_external=False)
-
-        task_id_list = [file_obj.task.task_id for file_obj in file_objs]
-        task_status_list = [file_obj.task.status for file_obj in file_objs]
-        context = {
-            'file_objs': file_objs,
-            'task_id_list': task_id_list,
-            'task_status_list': task_status_list,
-        }
         return render(request, 'file/index.html', context=context)
 
     if request.method == 'POST':
+
         # 1. Upload file
         if request.FILES.get('upload_file', None) is not None:
             uploaded_file = request.FILES['upload_file']
@@ -852,9 +957,8 @@ def file(request):
             # Save file into local
             default_storage.save(file_path, uploaded_file)
 
-            # TODO : Return file metadata
-            df_file = Input(file_path).from_csv()
-            print(df_file.columns, df_file.dtypes)
+            # # TODO : Return file metadata
+            # df_file = Input(file_path).from_csv()
 
             # Cal worker run task
             task_id = upload_file_task.delay(file_id)
@@ -901,6 +1005,110 @@ def file(request):
             file_eda_obj.save()
 
             file_obj.file_eda = file_eda_obj
+            file_obj.save()
+
+        # 4. Create db connection
+        if request.POST.get("create_connection"):
+            connection_name = request.POST.get('connection_name', None)
+            host = request.POST.get('host', None)
+            user_name = request.POST.get('user_name', None)
+            password = request.POST.get('password', None)
+            database = request.POST.get('database', None)
+
+            connection_obj = Connection(
+                host=host,
+                connection_name=connection_name,
+                user_name=user_name,
+                database=database,
+                is_delete=False,
+                password=Connection.encrypt_password(password)
+            )
+
+            connection_obj.save()
+
+        # 5. Selected connection
+        if request.POST.get("select_connection"):
+            connection_id = request.POST.get('connection_id', None)
+            if connection_id:
+
+                selected_connection_obj = Connection.get_connection(connection_id)
+
+                context.update({
+                    'selected_connection_obj': selected_connection_obj,
+                    'selected_tab': "connect-db-tab",
+                })
+
+                return render(request, 'file/index.html', context=context)
+
+        # 6. Delete connection
+        if request.POST.get("delete_connection"):
+            delete_connection_id = request.POST.get('delete_connection_id', None)
+
+            delete_connection_obj = Connection.objects.get(pk=delete_connection_id)
+
+            delete_connection_obj.is_delete = True
+            delete_connection_obj.save()
+
+            connection_objs = Connection.get_connections()
+
+            context.update({
+                'selected_tab': "connect-db-tab",
+                'connection_objs': connection_objs,
+                'selected_connection_obj': connection_objs[0] if len(connection_objs) > 0 else None,
+            })
+            return render(request, 'file/index.html', context=context)
+
+        # 7. Get detail of connection
+        if request.POST.get("get_tables_of_db"):
+
+            connection_id = request.POST.get("connection_id")
+
+            connection_obj = Connection.get_connection(connection_id)
+
+            tables = connection_obj.get_tables_from_db()
+
+            context.update({
+                'selected_connection_obj': connection_obj,
+                'selected_tab': "connect-db-tab",
+                'connection_db': tables
+            })
+
+            return render(request, 'file/index.html', context=context)
+
+        # 8. Ingest table
+        if request.POST.get("ingest_table"):
+            print("DEBUG DANGEROUS! Re-ingest data")
+            table_name = request.POST.get("table_name")
+            connection_id = request.POST.get("connection_id")
+
+            connection_obj = Connection.get_connection(connection_id, decrypt_password=False)
+
+            file_id = uuid.uuid1()
+
+            #  Send task into Worker
+            task_id = ingest_file_from_db_task.delay(file_id,
+                                                     connection_obj.host,
+                                                     connection_obj.user_name,
+                                                     connection_obj.password,
+                                                     connection_obj.database,
+                                                     table_name,
+                                                     )
+            task_id = str(task_id)
+
+            task_obj = Task(
+                task_id=task_id,
+                status=config.TASK_STATUS.get('PENDING')
+            )
+            task_obj.save()
+
+            # Add file into file obj. Todo : Add two extra information into file, - relation into Connection
+            file_obj = File(
+                file_id=file_id,
+                file_name="{}_{}".format(connection_obj.connection_name, table_name),
+                file_path=None,
+                is_delete=False,
+                task=task_obj
+            )
             file_obj.save()
 
         return HttpResponseRedirect(reverse("file"))

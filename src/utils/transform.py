@@ -8,6 +8,11 @@ from sklearn.neighbors import KernelDensity
 from numerize.numerize import numerize
 import math
 from pathlib import Path
+import teradatasql
+from utils.config import SECRET_KEY_FOR_ENCRYPTION
+from cryptography.fernet import Fernet
+import base64
+
 
 FILE_BASE_DIR = "static/file_upload/"
 EXPERIMENTS_BASE_DIR = "static/experiments/"
@@ -95,6 +100,40 @@ class Input:
         except Exception as e:
             mes = "Can't load file from {}. ERROR : {}".format(dir, e)
             raise Exception(mes)
+
+    @staticmethod
+    def from_teradata(hostname, username, password, database, table):
+        try:
+            connection = teradatasql.connect(
+                host=hostname,
+                user=username,
+                password=password
+            )
+
+            # Create a cursor
+            cursor = connection.cursor()
+
+        except Exception as e:
+            mes = "Can't connect to DB. Error : {}".format(e)
+            raise Exception(mes)
+
+        try:
+            sql_query = "SELECT * FROM \"{}\".\"{}\";".format(database, table)
+            cursor.execute(sql_query)
+
+            result_set = cursor.fetchall()
+
+            # Convert the result set into a Pandas DataFrame
+            df = pd.DataFrame(result_set, columns=[desc[0] for desc in cursor.description])
+
+            return df
+        except Exception as e:
+            mes = "Can't connect select data from DB. Error : {}".format(e)
+            raise Exception(mes)
+
+        finally:
+            cursor.close()
+            connection.close()
 
 
 class Output:
@@ -616,3 +655,22 @@ class Histogram:
             return float(value)
         except Exception:
             return 0
+
+
+def encrypt_password(password):
+    secret_key = SECRET_KEY_FOR_ENCRYPTION
+    cipher_suite = Fernet(secret_key)
+    encrypted_password = cipher_suite.encrypt(str(password).encode("utf-8"))
+
+    return encrypted_password
+
+
+def decrypt_password(password):
+    secret_key = SECRET_KEY_FOR_ENCRYPTION
+    cipher_suite = Fernet(secret_key)
+
+    if isinstance(password, str):
+        password = base64.b64decode(password)
+
+    decrypted_password = cipher_suite.decrypt(password)
+    return decrypted_password.decode()

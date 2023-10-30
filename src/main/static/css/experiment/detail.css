@@ -125,3 +125,13 @@ CSS FOR CHART JS
 .input__container {
     font-size:15px;
 }
+
+.highlight-text, .highlight-name {
+    font-size: 1.2em;    /* font-size bigger than normal; adjust as needed */
+    color: red;          /* text color set to red */
+}
+
+.form-select {
+    height:30px;
+    border: 1px solid #C0C0C0;
+}

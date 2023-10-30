@@ -9,6 +9,14 @@ import numpy as np
 from autogluon.tabular import TabularPredictor as task
 import pandas as pd
 import shap
+from sklearn2pmml import sklearn2pmml
+from nyoka import skl_to_pmml, lgb_to_pmml
+from sklearn.pipeline import Pipeline
+from teradataml.context.context import *
+from teradataml import save_byom, delete_byom
+from autogluon.features.generators.astype import AsTypeFeatureGenerator
+from autogluon.features.generators import CategoryFeatureGenerator
+from sklearn.base import BaseEstimator, ClassifierMixin
 
 
 def parse_float(val):
@@ -19,6 +27,20 @@ def parse_float(val):
     except:
         return val
 
+
+class LGBMBoosterWrapper(BaseEstimator, ClassifierMixin):
+    def __init__(self, booster):
+        self.booster = booster
+
+    def fit(self, X, y=None):
+        # Just return self as fitting is already done when the booster was trained.
+        return self
+
+    def predict(self, X):
+        return self.booster.predict(X)
+
+    def predict_proba(self, X):
+        return self.booster.predict(X, raw_score=False)
 
 class ModelWrapper:
     def __init__(self, model, features):
@@ -583,7 +605,7 @@ class Explain:
 
             self.df_data = Input(test_url).from_pickle()
 
-            self.df_data = self.df_data.sample(100)
+            self.df_data = self.df_data.sample(100) if len(self.df_data) > 100 else self.df_data
 
         # Load predictor
         _save_dir = get_experiments_url(self.explain_info.get("experiment_id"))
@@ -730,3 +752,182 @@ class Explain:
                 shap_values_multi_class[class_decode] = df_shap
 
             return shap_values_multi_class
+
+
+class Deployment:
+    def __init__(self, deploy_id):
+        self.deploy_id = deploy_id
+
+        # Load explain info
+        params = {"deploy_id": deploy_id}
+        _info = services.get(target_path=config.TARGET_PATH.get("deploy"), params=params)
+
+        self.deploy_info = _info.get("deploy_info")
+        self.connection_info = _info.get("connection_info")
+
+        # Load predictor
+        self._save_dir = get_experiments_url(self.deploy_info.get("experiment_id"))
+
+        self.predictor, self.model = self._get_predictor()
+
+    def deploy(self):
+        self.export_sklearn_model(self.deploy_info.get("model_name"))
+
+        sql_preprocess = self.generate_preprocessing_sql()
+        sql_prediction = self.generate_prediction_sql()
+
+        # Save this sql back to DB
+        _data = {
+            "deploy_id": self.deploy_info.get("deploy_id"),
+            "sql_preprocess": sql_preprocess,
+            "sql_prediction": sql_prediction
+        }
+        services.post(data=_data, target_path=config.TARGET_PATH.get("deploy"))
+
+    def _get_predictor(self):
+        predictor = task.load(self._save_dir)
+        model = predictor._trainer.load_model(self.deploy_info.get("model_name"))
+
+        return predictor, model
+
+    def export_sklearn_model(self, model_name):
+        # Connection to DB
+        create_context(host=self.connection_info.get("host_name"), username=self.connection_info.get("username"),
+                       password=self.connection_info.get("password"), database=self.connection_info.get("database"))
+
+        # Load model
+        model = self.predictor._trainer.load_model(model_name)
+        if model.__class__.__name__ not in ['RFModel', 'KNNModel', 'XTModel', 'LGBModel']:
+            raise Exception("Only support for Random Forest and KNN Model")
+
+        file_name = "{}.pmml".format(self.deploy_info.get("teradata_model_id"))
+        file_path = os.path.join(self._save_dir, file_name)
+
+        # Save model into local
+        if model.__class__.__name__ in ['RFModel', 'XTModel']:
+            sklearn2pmml(model.model, file_path)
+
+        elif model.__class__.__name__ == 'KNNModel':
+            pipeline = Pipeline([("model", model.model)])
+
+            # Export the pipeline to PMML
+            features = ["x{}".format(i+1) for i in range(len(model.features))]
+            skl_to_pmml(pipeline, features, "target", file_path)
+
+        elif model.__class__.__name__ == 'LGBModel':
+            wrapped_booster = LGBMBoosterWrapper(model.model)
+            pipeline = Pipeline([("model", wrapped_booster)])
+            features = ["x{}".format(i+1) for i in range(len(model.features))]
+            lgb_to_pmml(pipeline, features, "target", file_path)
+
+        # Save model into Teradata
+        try:
+            # Saving model in PMML format to Vantage table
+            save_byom(model_id=self.deploy_info.get("teradata_model_id"), model_file=file_path,
+                      table_name=self.deploy_info.get("output_table"))
+
+        except Exception as e:
+            if str(e.args).find('TDML_2200') >= 1:
+                delete_byom(model_id=model_name, table_name=self.deploy_info.get("output_table"))
+                save_byom(model_id=model_name, model_file=file_path, table_name=self.deploy_info.get("output_table"))
+
+    def _get_generator(self):
+        """
+        Extract generator form predictor
+        """
+        f = self.predictor._learner.feature_generators[0]
+
+        cat_f_generator, as_type_f_generator = None, None
+        label_encode_cols = []
+
+        for generators in f.generators:
+            for generator in generators:
+                if isinstance(generator, AsTypeFeatureGenerator):
+                    as_type_f_generator = generator
+                if isinstance(generator, CategoryFeatureGenerator):
+                    cat_f_generator = generator
+                    label_encode_cols = cat_f_generator.category_map.keys()
+
+        return as_type_f_generator, cat_f_generator, label_encode_cols
+
+    def generate_preprocessing_sql(self):
+
+        as_type_f_generator, cat_f_generator, label_encode_cols = self._get_generator()
+
+        ############ 1. DATA TYPE CONVERT ##############
+        # FOR NOT DUPLICATE
+        processed_column = []
+
+        # 1. Boolean feature.
+        bool_features = as_type_f_generator._bool_features
+
+        sql_dtype_bool = ""
+        for col, val in bool_features.items():
+            if (col not in label_encode_cols) and (col not in processed_column):
+                sql_dtype_bool += "\t CASE WHEN \"{}\" = '{}' THEN 1 ELSE 0 END AS \"{}\", \r\n".format(col, val, col)
+                processed_column.append(col)
+
+        # 2. Number Feature.Fill null value with 0
+        sql_dtype_numeric = ""
+        for col in as_type_f_generator._int_features:
+            if (col not in label_encode_cols) and (col not in processed_column):
+                sql_dtype_numeric += "\t COALESCE(CAST(\"{}\" AS INT), 0) AS \"{}\", \r\n".format(col, col)
+                processed_column.append(col)
+
+        # 3. Category feature.
+        sql_dtype_category = ""
+        if hasattr(self.model, "_feature_generator"):
+            for cat_fea in self.model._feature_generator.features_in:
+                if (cat_fea not in label_encode_cols) and (cat_fea not in processed_column):
+                    sql_dtype_category += "\t COALESCE(CAST(\"{}\" AS VARCHAR(255)), '') AS \"{}\", \r\n".format(cat_fea,
+                                                                                                         cat_fea)
+                    processed_column.append(cat_fea)
+
+        # 4. Float features
+        sql_dtype_float = ""
+        float_features = [key for key, value in as_type_f_generator._type_map_real_opt.items() if
+                          value == np.dtype('float64')]
+        for col in float_features:
+            sql_dtype_float += "\t COALESCE(CAST(\"{}\" AS FLOAT), 0) AS \"{}\", \r\n".format(col, col)
+
+        ######## FINISH DATA PROCESSING ###########
+
+        ######## 2. LABEL ENCODING PROCESSING ########
+        # Label encoding
+        sql_encoding = ""
+        if cat_f_generator is not None:
+            for col, encode_values in cat_f_generator.category_map.items():
+                _sql_when_codition = "\t CASE \r\n"
+
+                for i, encode_val in enumerate(encode_values):
+                    _sql_when_codition += "\t\t WHEN \"{}\" = '{}' THEN {} \r\n".format(col, encode_val, i)
+
+                _sql_when_codition += "\tELSE -1 \r\n"
+                _sql_when_codition += "\tEND AS \"{}\", \r\n".format(col)
+
+                sql_encoding += _sql_when_codition
+
+        ######## FINISH LABEL ENCODING PROCESSING ###########
+
+        # Remove last comma
+        sql_encoding = sql_encoding[:sql_encoding.rfind(",")]
+        features_order = ", ".join(f"\"{col}\" as x{i + 1}" for i, col in enumerate(self.model.features))
+        sql_uid = "ROW_NUMBER() OVER (ORDER BY \"{}\") AS id,".format(self.model.features[0])
+
+        return "CREATE VIEW [OUTPUT_VIEW] as \r\n" + \
+            " SELECT " + sql_uid + features_order + "\r\nFROM (SELECT \r\n" + \
+            sql_dtype_bool + sql_dtype_numeric + sql_dtype_float + sql_dtype_category + sql_encoding + \
+            "\r\nFROM " + "[INTPUT_TABLE]" + ") predict_table;"
+
+    def generate_prediction_sql(self):
+        # sql_prediction
+        sql = "SELECT * FROM mldb.PMMLPredict( \r\n" + \
+                "\tON [OUTPUT_VIEW] as InputTable\r\n" + \
+                "\tON \r\n" + \
+                "\t(SELECT * \r\n" + \
+                "\tFROM {}.{} as ModelTable \r\n".format(self.connection_info.get("database"), self.deploy_info.get("output_table")) + \
+                "\tWHERE model_id = '{}')\r\n".format(self.deploy_info.get("teradata_model_id")) + \
+                "DIMENSION USING Accumulate ( 'id' )) as T;"
+
+        return sql
+

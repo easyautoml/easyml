@@ -152,12 +152,14 @@
                     </div>
                 </div>
 
+                <!-- Prediction -->
                 <div class="title__container" style="margin-top:30px">
                     <h1>Prediction
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target=".bd-example-modal-lg"> + </button>
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#prediction_form"> + </button>
                     </h1>
-                    <div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog">
-                        <div class="modal-dialog modal-lg" role="document">
+
+                    <div class="modal fade bd-example-modal-lg" tabindex="-1" role="dialog" id="prediction_form">
+                        <div class="modal-dialog modal-lg" role="document" >
                             <div class="modal-content">
 
                                 <form id="predict_form" method="post" enctype="multipart/form-data">{% csrf_token %}
@@ -275,7 +277,184 @@
                                             {% endif %}
                                         </td>
                                         <td>
-                                            <button class="btn btn-outline-danger" data-toggle="modal" data-target="#delete_confirm" onclick="delete_confirm('{{ predict_obj.predict_id }}', '{{ predict_obj.predict_name }}')">
+                                            <button class="btn btn-outline-danger" data-toggle="modal" data-target="#delete_confirm" onclick="delete_confirm('{{ predict_obj.predict_id }}', '{{ predict_obj.predict_name }}', 'delete_predict')">
+                                                <ion-icon name="trash-outline"/>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Deploy -->
+                <div class="title__container" style="margin-top:30px">
+                    <h1>Deployment
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#deploy"> + </button>
+                    </h1>
+
+                    <div class="modal fade bd-example-modal-lg" tabindex="-1" id="deploy" role="dialog">
+                        <div class="modal-dialog modal-lg" role="document">
+                            <div class="modal-content">
+
+                                <form id="deploy_form" method="post" enctype="multipart/form-data">{% csrf_token %}
+                                    <div class="modal-header">
+                                        <h3 class="modal-title">Deploy to Teradata Database</h3>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span></button>
+                                    </div>
+
+                                    <div class="modal-body">
+
+                                        <div class="form-group input__container">
+                                            <label for="predict_name">Deploy Name</label>
+                                            <input type="text" class="form-control" id="deploy_name" name="deploy_name" aria-describedby="emailHelp" placeholder="Enter Predict Name" required>
+                                        </div>
+
+                                        <div class="form-group input__container">
+                                            <label for="predict_name">Output Table Name</label>
+                                            <input type="text" class="form-control" id="output_table" name="output_table" placeholder="Enter output table" required>
+                                        </div>
+
+                                        <div class="form-group input__container">
+                                            <label for="select_model" >Model</label></br>
+
+                                            <select class="form-select" id="deploy_model" name="deploy_model" required>
+                                                <option selected disabled value="">Choose Models</option>
+                                                {% for model_obj in model_objs %}
+                                                    <option value="{{ model_obj.model_id }}">{{ model_obj.model_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="invalid-feedback">Please select a valid state.</div>
+
+                                        </div>
+
+                                        <div class="form-group input__container">
+                                            <label for="select_model" >Connections</label></br>
+
+                                            <select class="form-select" id="deploy_connection" name="deploy_connection" required>
+                                                <option selected disabled value="">Choose Models</option>
+                                                {% for connection_obj in connection_objs %}
+                                                    <option value="{{ connection_obj.connection_id }}">{{ connection_obj.connection_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="invalid-feedback">Please select a valid state.</div>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div class="modal-footer">
+                                        <input class="btn btn-primary" type="submit" name="create_deploy" value="Submit" id="create_deploy">
+                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="card">
+                    <div class="table-responsive custom-table-responsive">
+                        <table class="table custom-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Deploy Name</th>
+                                    <th scope="col">Models</th>
+                                    <th scope="col">Connection Name</th>
+                                    <th scope="col">Create Date</th>
+                                    <th scope="col">Status</th>
+                                    <th scope="col">Show SQL</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for deployment_obj in deployment_objs %}
+                                    <tr scope="row">
+                                        <td>{{ deployment_obj.deploy_name }}</td>
+                                        <td>{{ deployment_obj.model.model_name }}</td>
+                                        <td>{{ deployment_obj.connection.connection_name }}</td>
+                                        <td>{{ deployment_obj.create_datetime }}</td>
+                                        <td><a role="button" href="{% url 'task_detail' deployment_obj.task.task_id %}">
+                                            {% if deployment_obj.task.status  == 0 %}
+                                                PENDING
+                                            {% elif deployment_obj.task.status  == 1 %}
+                                                RUNNING
+                                            {% elif deployment_obj.task.status  == 2 %}
+                                                SUCCESS
+                                            {% else %}
+                                                <span>Fail</span>
+                                            {% endif %}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            {% if deployment_obj.task.status  == 2 %}
+                                                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#sql_preprocess_{{ deployment_obj.deploy_id }}"> SQL </button>
+
+                                                <div class="modal fade bd-example-modal-lg" tabindex="-1" id="sql_preprocess_{{ deployment_obj.deploy_id }}" role="dialog">
+                                                    <div class="modal-dialog modal-lg" role="document">
+                                                        <div class="modal-content">
+
+                                                                <div class="modal-header">
+                                                                    <h3 class="modal-title">Teradata SQL Pre-processing</h3>
+                                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                                        <span aria-hidden="true">&times;</span></button>
+                                                                </div>
+
+                                                                <div class="modal-body">
+                                                                    <div class="container">
+                                                                    <div id="sql-preprocessing-acc" class="accordion">
+
+                                                                        <img src="{% static 'img/teradata_model_process.png' %}" height="250px"/>
+
+                                                                        <!-- Item 1 -->
+                                                                        <div class="card">
+                                                                            <div class="card-header">
+                                                                                <h5 class="mb-0">
+                                                                                    <button class="btn btn-link" data-toggle="collapse" data-target="#sql-preprocessing-tab" aria-expanded="true" aria-controls="sql-preprocessing-tab">
+                                                                                        Data Pre-Processing
+                                                                                    </button>
+                                                                                </h5>
+                                                                            </div>
+                                                                            <div id="sql-preprocessing-tab" class="collapse show" aria-labelledby="headingOne" data-parent="#sql-preprocessing-acc">
+                                                                                <div class="card-body">
+                                                                                    <pre style="max-height: 500px; overflow-y: auto;"><code class="language-sql">{{ deployment_obj.sql_preprocess }}</code></pre>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        <!-- Item 2 -->
+                                                                        <div class="card">
+                                                                            <div class="card-header">
+                                                                                <h5 class="mb-0">
+                                                                                    <button class="btn btn-link collapsed" data-toggle="collapse" data-target="#model-prediction-tab" aria-expanded="false" aria-controls="model-prediction-tab">
+                                                                                        Prediction
+                                                                                    </button>
+                                                                                </h5>
+                                                                            </div>
+
+                                                                            <div id="model-prediction-tab" class="collapse" aria-labelledby="headingTwo" data-parent="#sql-preprocessing-acc">
+                                                                                <div class="card-body">
+                                                                                    <pre style="max-height: 200px; overflow-y: auto;"><code class="language-sql">{{ deployment_obj.sql_prediction }}</code></pre>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                </div>
+
+                                                                <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                                    </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-outline-danger" data-toggle="modal" data-target="#delete_confirm" onclick="delete_confirm('{{ deployment_obj.deploy_id }}', '{{ deployment_obj.deploy_name }}', 'delete_deployment')">
                                                 <ion-icon name="trash-outline"/>
                                             </button>
                                         </td>
@@ -296,15 +475,13 @@
         <form method="POST" action="" id="delete_predict_form"> {% csrf_token %}
             <div class="modal-content">
                 <div class="modal-body">
-                Are you sure delete <p id="delete_predict_name"/> file ?
-                    <ul hidden>
-                        <li><input type="text" id="delete_predict_id" name="delete_predict_id"></li>
-                    </ul>
+                    Are you sure you want to <span class="highlight-text">DELETE</span> the <span class="highlight-name" id="delete_name"></span>?
+                    <input type="text" id="delete_id" name="delete_id" hidden>
                 </div>
 
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-danger" name="delete_predict" value="delete_predict">Delete</button>
+                    <button type="submit" class="btn btn-danger" id="btn_submit_delete">Delete</button>
                 </div>
             </div>
         </form>
@@ -318,6 +495,12 @@
 <script src="https://code.highcharts.com/modules/export-data.js"></script>
 <script src="https://code.highcharts.com/modules/accessibility.js"></script>
 <script src="https://code.highcharts.com/highcharts-more.js"></script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/styles/default.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.7.2/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
 {% endblock %}
 
 </html>

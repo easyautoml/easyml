@@ -79,14 +79,15 @@ WSGI_APPLICATION = 'mlplatform.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'mlplatform1',
+        'NAME': 'easyml',
         'USER': 'postgres',
         'PASSWORD': 'password',
-        'HOST': '192.168.11.11',
+        'HOST': '127.0.0.1',
         'PORT': 5432,
     }
 }
 
+SECRET_KEY_FOR_ENCRYPTION = b'SgjUcQ8bLkQ85oFj_CPuPgSaeZwT3Rw92dM8xKmutMc='
 
 # Password validation
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
@@ -131,8 +132,8 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CELERY_BROKER_URL = 'redis://:@192.168.11.11:6379'
-CELERY_RESULT_BACKEND = 'redis://:@192.168.11.11:6379'
+CELERY_BROKER_URL = 'redis://:@127.0.0.1:6379'
+CELERY_RESULT_BACKEND = 'redis://:@127.0.0.1:6379'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_SERIALIZER = 'json'
