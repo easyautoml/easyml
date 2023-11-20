@@ -67,6 +67,12 @@ class Experiment(models.Model):
         null=True,
     )
 
+    prompt = models.ForeignKey(
+        'Prompt',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
     best_model_id = models.CharField(max_length=200, null=True)
 
     @staticmethod
@@ -771,3 +777,30 @@ class Deployment(models.Model):
         }
 
         return {'code': 200, 'description': 'Success', 'result': deploy_info}
+
+
+class Prompt(models.Model):
+    prompt_id = models.AutoField(
+        primary_key=True
+    )
+
+    prompt_data = models.CharField(
+        max_length=2000,
+        null=True
+    )
+
+    prompt_experiment = models.CharField(
+        max_length=2000,
+        null=True
+    )
+
+    prompt_result = models.CharField(
+        max_length=2000,
+        null=True
+    )
+
+    def as_json(self):
+        return dict(
+            prompt_data=self.prompt_data, prompt_experiment=self.prompt_experiment,
+            prompt_result=self.prompt_result
+        )

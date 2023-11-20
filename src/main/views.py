@@ -4,7 +4,7 @@ from django.contrib import messages
 from .models import Experiment, Predict, Model, Task, File, BulkCreateManager, FileMetadata, FileEda, Evaluation, \
     SCORE, EvaluationClassRocLift, EvaluationClass, EvaluationClassDistribution, EvaluationPredictActual, \
     EvaluationSubPopulation, Explain, ExplainPdp, ExplainPdpRegress, ExplainPdpClass, ExplainPdpClassValues, \
-    Connection, Deployment
+    Connection, Deployment, Prompt
 from django.db.models import Max
 from django.core.files.storage import default_storage
 from django.urls import reverse
@@ -1236,6 +1236,37 @@ def file_eda(request, pk):
 
 
 @csrf_exempt
+def file_download(request):
+    """
+    API used to download file
+    """
+    # Adjust the path to your CSV file
+    print(request)
+    if request.method == 'GET':
+        experiment_id = request.GET.get('experiment_id', None)
+
+        if experiment_id is not None:
+            try:
+                experiment_obj = Experiment.objects.get(pk=experiment_id)
+
+            except Experiment.DoesNotExist:
+                return JsonResponse({'code': 404, 'description': 'Experiment does not exists'})
+
+            file_id = experiment_obj.file.file_id
+            file_path = get_file_url(file_id)
+            df = pd.read_csv(file_path)
+
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="data.csv"'
+
+            df.to_csv(path_or_buf=response, index=False)
+
+            return response
+
+        return JsonResponse({'code': 404, 'description': 'Experiment must be provided'})
+
+
+@csrf_exempt
 def task(request, pk=None):
     """
     API. Used to update Task status.
@@ -1309,3 +1340,41 @@ def task_api(request):
         task_obj = Task.objects.get(pk=task_id)
 
         return JsonResponse({'code': 200, 'description': 'Success', 'result': task_obj.as_json()})
+
+
+@csrf_exempt
+def experiment_prompts(request):
+    if request.method == "GET":
+        experiment_id = request.GET.get('experiment_id', None)
+        experiment_obj = Experiment.objects.get(pk=experiment_id)
+        prompt = experiment_obj.prompt.as_json()
+
+        return JsonResponse({'code': 200, 'description': 'Success', 'result': prompt})
+
+        # 1. Load data used to
+    if request.method == "POST":
+
+        body_unicode = request.body.decode('utf-8')
+        agrs = json.loads(body_unicode)
+
+        experiment_id = agrs.get('experiment_id', None)
+
+        try:
+            prompt_obj = Prompt(
+                prompt_data=agrs.get('prompt_data', None),
+                prompt_experiment=agrs.get('prompt_experiment', None),
+                prompt_result=agrs.get('prompt_result', None),
+            )
+            prompt_obj.save()
+
+            experiment_obj = Experiment.objects.get(pk=experiment_id)
+            experiment_obj.prompt = prompt_obj
+            experiment_obj.save()
+
+        except Exception as e:
+            print(e)
+            return JsonResponse({'code': 404, 'description': 'Can not save prompt, error {}'.format(e)})
+
+        return JsonResponse({'code': 200, 'description': 'Success'})
+
+    return JsonResponse({'code': 404, 'description': 'Method not valid'})

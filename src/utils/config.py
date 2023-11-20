@@ -23,6 +23,8 @@ TARGET_PATH = {
     "explain_pdp_class_values": 'explain/pdp/class/values',
 
     "deploy": 'deploy',
+
+    "experiment_prompt": "api/v1/experiment/prompt",
 }
 
 TASK_STATUS = {

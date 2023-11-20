@@ -115,6 +115,9 @@ class Train:
         Output(train_url).to_pickle(df_train)
         Output(test_url).to_pickle(df_test)
 
+        # Generate prompt
+        self.generate_chatgpt_prompt(predictor, df_data, df_test)
+
     def pre_process(self, df_data):
         # Drop Null at target
         df_data.dropna(subset=[self.experiment_info.get("target")], inplace=True)
@@ -160,6 +163,44 @@ class Train:
 
     def _get_model_id(self, model_name):
         return "{}_{}".format(self.experiment_id, model_name)
+
+    def generate_chatgpt_prompt(self, predictor, df_data, df_test):
+        # Describe the numeric columns
+        desc_df = df_data.describe().astype(float).round(1).loc[['mean', 'min', 'max', 'std']]
+
+        # Add top 10 unique values for non-numeric columns
+        for col in df_data.select_dtypes(exclude=['number']):
+            top_values = df_data[col].value_counts().head(10).index.tolist()
+            desc_df.loc['unique_values', col] = str(top_values)
+
+        desc_df.replace(np.nan, "", inplace=True)
+        prompt_data = str(desc_df.to_dict())
+
+        # Prepare the experiment settings information
+        _train_ratio = float(self.experiment_info.get("split_ratio"))
+        experiments_setting = {
+            "target": self.experiment_info.get("target"),
+            "features": self.experiment_info.get("features"),
+            "score": self.experiment_info.get("score"),
+            "train-test-ratio": "Train ratio {}, Test ratio {}".format(_train_ratio, 10-_train_ratio)
+        }
+
+        prompt_experiment = str(experiments_setting)
+
+        # Get the leaderboard as a list of records
+        df_result = predictor.leaderboard(df_test, silent=True)[["model", "score_test", "score_val"]]
+        df_result[["score_test", "score_val"]] = df_result[["score_test", "score_val"]].abs()
+        df_result = df_result.round(2)
+        prompt_result = str(df_result.to_dict('records'))
+
+        # Post info
+        _data = {
+            "experiment_id": self.experiment_id,
+            "prompt_data": prompt_data,
+            "prompt_experiment": prompt_experiment,
+            "prompt_result": prompt_result
+        }
+        services.post(data=_data, target_path=config.TARGET_PATH.get("experiment_prompt"))
 
 
 class Predict:

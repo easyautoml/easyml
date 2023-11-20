@@ -38,6 +38,8 @@ urlpatterns = [
     path(r'task/<str:pk>', views.task, name='task_detail'),
 
     path(r'api/v1/task/', views.task_api, name='task_api'),
+    path(r'api/v1/experiment/prompt', views.experiment_prompts, name='experiment_prompts'),
+    path(r'api/v1/file/download', views.file_download, name='file_download'),
 
     path('deploy', views.deploy, name='deploy'),
 ]

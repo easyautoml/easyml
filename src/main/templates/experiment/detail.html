@@ -92,6 +92,22 @@
                     </h4>
                 </div>
             </div>
+
+            <div class="header-card bg-c">
+                <div class="header-card-block">
+                    <h6 class="m-b-20">CHATGPT &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h6>
+                    <h4 class="text-right">
+                        <ion-icon class="f-left" name="reader-outline"></ion-icon>
+                        {% if experiment_obj.task.status == 2 %}
+                            <a role="button" href="http://localhost:8501/?id={{ experiment_obj.experiment_id }}" class="btn btn-primary" target="_blank" >
+                                <span>Go to Experiment</span>
+                            </a>
+                        {% endif %}
+
+                    </h4>
+                </div>
+            </div>
+
         </ul>
     </nav>
 </header>

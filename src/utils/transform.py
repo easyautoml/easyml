@@ -605,14 +605,14 @@ class Histogram:
         return self.series.dtype.name in ['category', 'object', 'datetime64[ns]']
 
     def check_integer(self):
-        is_integer = self.series.dtype in [np.int, np.int8, np.int16, np.int32, np.int64]
+        is_integer = self.series.dtype in [int, np.int8, np.int16, np.int32, np.int64]
 
         if is_integer:
             self.series = self.series.astype(int)
             return True
 
         # Check case data type is float 0.0 1.0 2.0 but it is integer
-        if self.series.dtype in [np.float, np.float16, np.float32, np.float64]:
+        if self.series.dtype in [float, np.float16, np.float32, np.float64]:
             _check_all_integer = True
 
             for row in self.series:
